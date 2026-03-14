@@ -1,3 +1,19 @@
+## 2026-03-14 - US-007
+- Updated `HomeScreen` to show tasks for today's `dayOfWeek` using real-time Firestore `onSnapshot` listener
+- Tasks sorted: pending first, completed last (with strikethrough + reduced opacity)
+- Each task shows: assignee colored badge (E=Eu/C=Cônjuge/2=Ambos), task name, difficulty emoji+label, points
+- Empty state message when no tasks for today
+- Loading spinner while session/tasks load
+- Files changed:
+  - `xo-separacao/src/screens/HomeScreen.tsx` – full implementation with real-time list
+- **Learnings for future iterations:**
+  - Use `onSnapshot` from `firebase/firestore` for real-time listeners; return unsubscribe in useEffect cleanup
+  - Read `sessionId` and `memberId` from SecureStore in `useEffect` to initialize Firestore listener
+  - Assignee badge: 'E' for own member, 'C' for cônjuge, '2' for both; colored by MEMBER_COLORS map
+  - Browser verification not available; manual verification needed
+
+---
+
 ## 2026-03-14 - US-006
 - Created `CreateTaskScreen` with name input (max 60 chars), day-of-week chip selector, assignee selector (Eu/Cônjuge/Ambos), difficulty selector with emoji+label+points, inline validation, and save/cancel buttons
 - Added `CreateTask` route to `RootStackParamList` (with optional `task` param for future edit support)

@@ -1,3 +1,18 @@
+## 2026-03-14 - US-008
+- Added horizontal day-of-week selector (Seg–Dom) to `HomeScreen` above the task list
+- Selected day defaults to today; tapping another tab updates the Firestore query via `selectedDay` state
+- Today's tab shows a small dot indicator; selected tab highlighted with app primary color
+- Firestore listener re-subscribes on `selectedDay` change (via `useEffect` dependency)
+- Selected day persists in component state (survives navigation away and back)
+- Files changed:
+  - `xo-separacao/src/screens/HomeScreen.tsx` – added `DAY_TABS`, `selectedDay` state, `ScrollView` tab bar, updated `useEffect` to use `selectedDay`
+- **Learnings for future iterations:**
+  - `ScrollView` with `horizontal` + `contentContainerStyle.gap` works well for chip selectors
+  - Day selector uses `gap` in `contentContainerStyle` (React Native 0.71+); fallback with `marginRight` if needed
+  - Browser verification not available; manual verification needed
+
+---
+
 ## 2026-03-14 - US-007
 - Updated `HomeScreen` to show tasks for today's `dayOfWeek` using real-time Firestore `onSnapshot` listener
 - Tasks sorted: pending first, completed last (with strikethrough + reduced opacity)

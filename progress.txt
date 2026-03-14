@@ -1,3 +1,20 @@
+## 2026-03-14 - US-009
+- Added `toggleTaskComplete` to `taskService.ts` using Firestore `runTransaction` to atomically update task fields and session score
+- Checkbox added to each `TaskItem` in `HomeScreen.tsx`; tapping completes/uncompletes the task
+- Animated `+X pts!` badge appears briefly over the points counter on completion (fade-out + slide-up via `Animated.parallel`)
+- Only the member who completed a task can unmark it (`completedBy === memberId` check)
+- Files changed:
+  - `xo-separacao/src/services/taskService.ts` – added `toggleTaskComplete` with `runTransaction` + `increment`
+  - `xo-separacao/src/screens/HomeScreen.tsx` – updated `TaskItem` with checkbox, toggle handler, animated badge
+- **Learnings for future iterations:**
+  - `runTransaction` from `firebase/firestore` is the right pattern for atomic multi-doc updates (task + session score)
+  - `increment(n)` from `firebase/firestore` handles atomic score add/subtract
+  - Use `useRef(new Animated.Value(0))` to avoid re-creating Animated values on re-render
+  - Badge is positioned with `position: 'absolute'` + `bottom: '100%'` to float above the parent element
+  - Browser verification not available; manual verification needed
+
+---
+
 ## 2026-03-14 - US-008
 - Added horizontal day-of-week selector (Seg–Dom) to `HomeScreen` above the task list
 - Selected day defaults to today; tapping another tab updates the Firestore query via `selectedDay` state

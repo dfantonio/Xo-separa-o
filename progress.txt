@@ -1,0 +1,24 @@
+## Codebase Patterns
+- All app code lives under `/workspace/xo-separacao/` (not the workspace root)
+- Navigation stack types defined in `src/navigation/types.ts` as `RootStackParamList`
+- Session persistence uses `expo-secure-store` with key `sessionId`
+- Firebase config in `src/config/firebase.ts` exports `db` (Firestore instance)
+- Typecheck runs with `npx tsc --noEmit` from `/workspace/xo-separacao/`
+- Git commits are made from `/workspace` (repo root)
+
+---
+
+## 2026-03-14 - US-002
+- Implemented onboarding screen with React Navigation stack
+- Files changed:
+  - `xo-separacao/App.tsx` – replaced default content with NavigationContainer + StackNavigator
+  - `xo-separacao/src/navigation/types.ts` – created RootStackParamList type
+  - `xo-separacao/src/screens/OnboardingScreen.tsx` – main onboarding UI with session check
+  - `xo-separacao/src/screens/CreateSessionScreen.tsx` – placeholder
+  - `xo-separacao/src/screens/JoinSessionScreen.tsx` – placeholder
+  - `xo-separacao/src/screens/HomeScreen.tsx` – placeholder
+- **Learnings for future iterations:**
+  - `@react-navigation/stack` requires `@react-navigation/native` + `react-native-screens` + `react-native-safe-area-context` (already installed)
+  - Use `navigation.replace('Home')` (not `navigate`) when redirecting from onboarding to avoid back-button returning to onboarding
+  - Browser verification not available in this environment; manual verification needed
+---

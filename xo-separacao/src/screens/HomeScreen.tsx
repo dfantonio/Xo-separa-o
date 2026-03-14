@@ -18,6 +18,7 @@ import * as SecureStore from 'expo-secure-store';
 import { db } from '../config/firebase';
 import { DIFFICULTY_CONFIG } from '../constants/difficulty';
 import { toggleTaskComplete, deleteTask } from '../services/taskService';
+import { checkAndResetMonthlyScore } from '../services/sessionService';
 import type { Task, DayOfWeek } from '../types/task';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -254,6 +255,12 @@ export default function HomeScreen() {
       const mid = await SecureStore.getItemAsync('memberId');
       setSessionId(sid);
       if (mid) setMemberId(mid);
+      if (sid) {
+        // Check and perform monthly score reset if the month has changed
+        checkAndResetMonthlyScore(sid).catch(() => {
+          // Silently ignore reset errors (e.g. offline)
+        });
+      }
     }
     loadSession();
   }, []);

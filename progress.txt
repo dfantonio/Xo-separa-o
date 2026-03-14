@@ -1,3 +1,21 @@
+## 2026-03-14 - US-006
+- Created `CreateTaskScreen` with name input (max 60 chars), day-of-week chip selector, assignee selector (Eu/Cônjuge/Ambos), difficulty selector with emoji+label+points, inline validation, and save/cancel buttons
+- Added `CreateTask` route to `RootStackParamList` (with optional `task` param for future edit support)
+- Registered `CreateTaskScreen` in `App.tsx`
+- Updated `HomeScreen` with floating '+' FAB that navigates to CreateTask
+- Files changed:
+  - `xo-separacao/src/navigation/types.ts` – added CreateTask route
+  - `xo-separacao/src/screens/CreateTaskScreen.tsx` – new screen
+  - `xo-separacao/src/screens/HomeScreen.tsx` – added FAB
+  - `xo-separacao/App.tsx` – registered CreateTaskScreen
+- **Learnings for future iterations:**
+  - `CreateTaskScreen` accepts optional `task` param for edit mode (US-010 ready)
+  - Assignee mapping: 'Eu' → memberId, 'Cônjuge' → other member, 'Ambos' → 'both'
+  - Read memberId from SecureStore inside `useEffect` to resolve assignedTo at save time
+  - Browser verification not available; manual verification needed
+
+---
+
 ## 2026-03-14 - US-005
 - Created Task type interface in `src/types/task.ts` with all required fields
 - Created difficulty constants in `src/constants/difficulty.ts` with emoji/label/points mapping

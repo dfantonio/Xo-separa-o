@@ -1,0 +1,230 @@
+{
+  "project": "Xô Separação",
+  "branchName": "ralph/xo-separacao",
+  "description": "Aplicativo React Native (Expo) para casais organizarem a rotina doméstica juntos. O casal se conecta por código, divide tarefas por dia da semana com níveis de dificuldade, marca o que foi feito, acumula pontos mensais e recebe lembretes locais às 15h e 20h.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Setup do projeto Expo e Firebase",
+      "description": "Como desenvolvedor, preciso configurar o projeto base com Expo, Firebase Firestore e as bibliotecas essenciais para que o desenvolvimento possa começar.",
+      "acceptanceCriteria": [
+        "Projeto criado com `npx create-expo-app xo-separacao --template blank-typescript`",
+        "Dependências instaladas: firebase, expo-notifications, expo-secure-store, expo-task-manager, expo-background-fetch, @react-navigation/native, @react-navigation/stack, react-native-safe-area-context, react-native-screens",
+        "Arquivo `src/config/firebase.ts` criado com inicialização do Firebase App e exportação do Firestore (`db`)",
+        "Arquivo `.env.example` com as variáveis de ambiente necessárias (FIREBASE_API_KEY, etc.)",
+        "App roda sem erros com `npx expo start`",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Tela de onboarding com opções de criar ou entrar em sessão",
+      "description": "Como usuário novo, quero ver uma tela inicial com opções de criar uma sessão do casal ou entrar com um código existente.",
+      "acceptanceCriteria": [
+        "Tela `OnboardingScreen` exibe nome do app 'Xô Separação', slogan e dois botões: 'Criar casal' e 'Entrar com código'",
+        "'Criar casal' navega para `CreateSessionScreen`",
+        "'Entrar com código' navega para `JoinSessionScreen`",
+        "Se já houver sessão salva no `expo-secure-store` (chave `sessionId`), redirecionar direto para `HomeScreen`",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Criar sessão do casal e gerar código de convite",
+      "description": "Como usuário novo, quero criar uma sessão para o meu casal e receber um código de 6 caracteres para compartilhar com meu cônjuge.",
+      "acceptanceCriteria": [
+        "Tela `CreateSessionScreen` exibe campo de nome do usuário e botão 'Gerar código'",
+        "Ao confirmar, gera código único de 6 caracteres alfanuméricos maiúsculos (ex: XO4F2A)",
+        "Cria documento no Firestore em `sessions/{sessionId}` com: `{ code, memberA: { name, score: 0 }, memberB: null, createdAt }`",
+        "Salva `sessionId` e `memberId` ('memberA') no `expo-secure-store`",
+        "O código é exibido em destaque com botão de copiar para a área de transferência",
+        "Exibe instrução: 'Compartilhe este código com seu cônjuge'",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Entrar em sessão existente com código",
+      "description": "Como cônjuge, quero inserir o código gerado pelo meu parceiro para me conectar à sessão compartilhada.",
+      "acceptanceCriteria": [
+        "Tela `JoinSessionScreen` exibe campo de texto para código de 6 caracteres e campo de nome",
+        "Botão 'Entrar' busca sessão no Firestore pelo código informado",
+        "Exibe erro 'Código inválido' se não encontrar sessão",
+        "Exibe erro 'Esta sessão já está completa' se `memberB` já estiver preenchido",
+        "Se válido, atualiza `sessions/{sessionId}.memberB` com `{ name, score: 0 }`",
+        "Salva `sessionId` e `memberId` ('memberB') no `expo-secure-store`",
+        "Redireciona para `ProfileScreen` ou `HomeScreen` após entrar",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Estrutura de dados de tarefas no Firestore",
+      "description": "Como desenvolvedor, preciso definir a estrutura de tarefas no Firestore para que o CRUD de tarefas funcione corretamente.",
+      "acceptanceCriteria": [
+        "Subcoleção `sessions/{sessionId}/tasks` definida com os campos: `id` (string), `name` (string, max 60 chars), `dayOfWeek` (0-6, domingo=0), `assignedTo` ('memberA' | 'memberB' | 'both'), `difficulty` ('easy' | 'medium' | 'hard' | 'heroic'), `points` (5 | 10 | 20 | 40), `completedBy` (string | null), `completedAt` (timestamp | null), `createdAt` (timestamp)",
+        "Arquivo `src/types/task.ts` criado com a interface `Task` correspondente",
+        "Arquivo `src/constants/difficulty.ts` criado com mapeamento: `{ easy: { label: 'Fácil', emoji: '🟢', points: 5 }, medium: { label: 'Médio', emoji: '🟡', points: 10 }, hard: { label: 'Difícil', emoji: '🟠', points: 20 }, heroic: { label: 'Heroico', emoji: '🔴', points: 40 } }`",
+        "Arquivo `src/services/taskService.ts` criado com funções: `createTask`, `updateTask`, `deleteTask`, `getTasksForDay` (query por dayOfWeek)",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Formulário de criar tarefa",
+      "description": "Como usuário, quero criar uma tarefa com nome, dia da semana, responsável e nível de dificuldade para organizar a rotina do lar.",
+      "acceptanceCriteria": [
+        "Tela `CreateTaskScreen` acessível por botão '+' na tela principal",
+        "Campo de texto para nome da tarefa (máximo 60 caracteres)",
+        "Seletor de dia da semana com 7 opções (Seg, Ter, Qua, Qui, Sex, Sáb, Dom)",
+        "Seletor de responsável: 'Eu', 'Cônjuge', 'Ambos'",
+        "Seletor de nível de dificuldade exibe as 4 opções com emoji, nome e pontos: 🟢 Fácil (5 pts), 🟡 Médio (10 pts), 🟠 Difícil (20 pts), 🔴 Heroico (40 pts)",
+        "Botão 'Salvar' chama `createTask` e fecha o formulário",
+        "Todos os campos são obrigatórios; exibe erro inline se vazio ao tentar salvar",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Tela principal com lista de tarefas do dia",
+      "description": "Como usuário, quero ver as tarefas de hoje ao abrir o app com indicadores visuais de responsável e dificuldade.",
+      "acceptanceCriteria": [
+        "Tela `HomeScreen` exibe as tarefas do dia atual (baseado em `new Date().getDay()`)",
+        "Tarefas pendentes aparecem primeiro; concluídas ao final com texto riscado e opacidade reduzida",
+        "Cada tarefa exibe: nome, badge de dificuldade (emoji + label), indicador de responsável (inicial + cor)",
+        "Se não houver tarefas, exibe mensagem 'Nenhuma tarefa para hoje. Toque em + para adicionar.'",
+        "Botão flutuante '+' abre `CreateTaskScreen`",
+        "Lista atualiza em tempo real via listener do Firestore (`onSnapshot`)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Navegação entre dias da semana",
+      "description": "Como usuário, quero navegar entre os dias da semana para ver e planejar tarefas de outros dias.",
+      "acceptanceCriteria": [
+        "Seletor horizontal no topo da `HomeScreen` exibe os 7 dias (Seg a Dom) como abas",
+        "Dia atual destacado com cor de fundo diferente",
+        "Ao tocar em outro dia, a lista de tarefas atualiza para exibir as tarefas daquele `dayOfWeek`",
+        "O dia selecionado persiste durante a sessão (não reseta ao voltar para o app)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Marcar tarefa como concluída com pontuação",
+      "description": "Como usuário, quero marcar uma tarefa como concluída para registrar o que foi feito e ganhar os pontos correspondentes ao nível da tarefa.",
+      "acceptanceCriteria": [
+        "Checkbox ao lado de cada tarefa pendente; ao tocar, marca como concluída",
+        "Atualiza `task.completedBy` com o `memberId` do usuário atual e `task.completedAt` com timestamp",
+        "Incrementa `sessions/{sessionId}.{memberId}.score` pelo valor de `task.points`",
+        "Exibe badge animado '+X pts!' brevemente sobre a tarefa ao concluir",
+        "Tarefa marcada fica riscada e vai para o final da lista",
+        "Ao tocar novamente em tarefa concluída, desmarca: limpa `completedBy`/`completedAt` e subtrai os pontos",
+        "Apenas quem marcou pode desmarcar (verificar `completedBy === memberId`)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Editar e excluir tarefa",
+      "description": "Como usuário, quero editar ou excluir uma tarefa para manter a lista atualizada.",
+      "acceptanceCriteria": [
+        "Swipe para a esquerda em qualquer tarefa revela botões 'Editar' e 'Excluir'",
+        "'Excluir' exibe modal de confirmação antes de chamar `deleteTask`",
+        "'Editar' abre `CreateTaskScreen` pré-preenchida com os dados da tarefa",
+        "Ao salvar edição, chama `updateTask` com os novos dados",
+        "Qualquer membro pode editar ou excluir qualquer tarefa",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Tela de ranking e pontuação do casal",
+      "description": "Como usuário, quero ver minha pontuação e a do meu cônjuge para acompanhar o ranking mensal.",
+      "acceptanceCriteria": [
+        "Tela `RankingScreen` acessível pela navegação inferior ou botão na `HomeScreen`",
+        "Exibe card para cada membro com: nome, pontuação do mês atual",
+        "Membro com maior pontuação exibe ícone de troféu 🏆",
+        "Exibe texto 'Mês atual: [Março 2026]' e 'Reset em: 01/04/2026'",
+        "Pontuação atualiza em tempo real via listener do Firestore (`onSnapshot` na sessão)",
+        "Se pontuações forem iguais, exibe ícone de troféu para ambos",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Reset mensal automático de pontuação",
+      "description": "Como usuário, quero que a pontuação seja zerada no primeiro dia de cada mês para que o ranking se renove.",
+      "acceptanceCriteria": [
+        "Ao abrir o app, verificar se `sessions/{sessionId}.lastResetMonth` é diferente do mês atual (formato 'YYYY-MM')",
+        "Se diferente, zerar `memberA.score` e `memberB.score` para 0 e atualizar `lastResetMonth` para o mês atual",
+        "A verificação usa transação do Firestore para evitar duplo reset em dispositivos simultâneos",
+        "Após reset, tela de ranking exibe '0 pts' para ambos",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Notificações locais agendadas às 15h e 20h",
+      "description": "Como usuário, quero receber lembretes automáticos às 15h e 20h quando houver tarefas pendentes no dia para não esquecer de completá-las.",
+      "acceptanceCriteria": [
+        "Ao abrir o app pela primeira vez, solicitar permissão de notificações via `expo-notifications`",
+        "Se permissão concedida, agendar notificação local diária para 15h00 e 20h00 com texto: 'Você ainda tem tarefas pendentes hoje! Abra o Xô Separação.'",
+        "Notificações usam `Notifications.scheduleNotificationAsync` com `repeats: true` e trigger de hora fixa",
+        "Se o usuário completar todas as tarefas do dia antes das 15h, cancelar as notificações do dia com `Notifications.cancelScheduledNotificationAsync`",
+        "Notificações são re-agendadas ao abrir o app (evitar duplicatas verificando notificações já agendadas)",
+        "Funciona em Android e iOS sem servidor remoto (apenas local scheduling)",
+        "Typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

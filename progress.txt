@@ -8,6 +8,19 @@
 
 ---
 
+## 2026-03-14 - US-003
+- Implemented CreateSessionScreen with name input, 6-char code generation, Firestore session creation, and SecureStore persistence
+- Files changed:
+  - `xo-separacao/src/screens/CreateSessionScreen.tsx` – full implementation
+- **Learnings for future iterations:**
+  - Use `@react-navigation/stack`'s `StackNavigationProp` (not `NativeStackNavigationProp` from `@react-navigation/native-stack`)
+  - `Clipboard` from `react-native` is deprecated but works; `expo-clipboard` is the modern alternative if needed
+  - `doc(collection(db, 'sessions'))` generates a new auto-ID document ref; `sessionRef.id` gives the Firestore-generated ID
+  - `serverTimestamp()` from `firebase/firestore` is used for `createdAt`
+  - Browser verification not available; manual verification needed
+
+---
+
 ## 2026-03-14 - US-002
 - Implemented onboarding screen with React Navigation stack
 - Files changed:

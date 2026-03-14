@@ -1,3 +1,19 @@
+## 2026-03-14 - US-005
+- Created Task type interface in `src/types/task.ts` with all required fields
+- Created difficulty constants in `src/constants/difficulty.ts` with emoji/label/points mapping
+- Created taskService in `src/services/taskService.ts` with createTask, updateTask, deleteTask, getTasksForDay
+- Files changed:
+  - `xo-separacao/src/types/task.ts` – Task interface and related types
+  - `xo-separacao/src/constants/difficulty.ts` – DIFFICULTY_CONFIG record
+  - `xo-separacao/src/services/taskService.ts` – CRUD functions + getTasksForDay query
+- **Learnings for future iterations:**
+  - Tasks live in subcollection `sessions/{sessionId}/tasks`
+  - `docToTask` helper maps Firestore doc to Task interface; reuse pattern for other collections
+  - `updateTask` auto-updates `points` when `difficulty` changes
+  - Import `DIFFICULTY_CONFIG` from `src/constants/difficulty` for emoji/label/points in UI
+
+---
+
 ## 2026-03-14 - US-004
 - Implemented JoinSessionScreen: code + name inputs, Firestore query by code, memberB validation, SecureStore persistence, navigation to Home
 - Files changed:
@@ -18,6 +34,9 @@
 - Firebase config in `src/config/firebase.ts` exports `db` (Firestore instance)
 - Typecheck runs with `npx tsc --noEmit` from `/workspace/xo-separacao/`
 - Git commits are made from `/workspace` (repo root)
+- Tasks stored in subcollection `sessions/{sessionId}/tasks`; Task type in `src/types/task.ts`
+- Difficulty config (emoji, label, points) in `src/constants/difficulty.ts` as `DIFFICULTY_CONFIG`
+- Task CRUD + query functions in `src/services/taskService.ts`
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -14,6 +15,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import * as SecureStore from 'expo-secure-store';
 import { db } from '../config/firebase';
 import { DIFFICULTY_CONFIG } from '../constants/difficulty';
+import { toggleTaskComplete } from '../services/taskService';
 import type { Task, DayOfWeek } from '../types/task';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -50,8 +52,17 @@ function docDataToTask(id: string, data: Record<string, unknown>): Task {
   };
 }
 
-function TaskItem({ task, memberId }: { task: Task; memberId: string }) {
+function TaskItem({
+  task,
+  memberId,
+  sessionId,
+}: {
+  task: Task;
+  memberId: string;
+  sessionId: string;
+}) {
   const isCompleted = task.completedBy !== null;
+  const canUnmark = isCompleted && task.completedBy === memberId;
   const diff = DIFFICULTY_CONFIG[task.difficulty];
   const assigneeColor = MEMBER_COLORS[task.assignedTo] ?? '#888';
   const assigneeInitial =
@@ -61,8 +72,52 @@ function TaskItem({ task, memberId }: { task: Task; memberId: string }) {
       ? 'E'
       : 'C';
 
+  const [badgeText, setBadgeText] = useState<string | null>(null);
+  const badgeOpacity = useRef(new Animated.Value(0)).current;
+  const badgeTranslateY = useRef(new Animated.Value(0)).current;
+
+  const showBadge = (text: string) => {
+    setBadgeText(text);
+    badgeOpacity.setValue(1);
+    badgeTranslateY.setValue(0);
+    Animated.parallel([
+      Animated.timing(badgeOpacity, {
+        toValue: 0,
+        duration: 1000,
+        delay: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(badgeTranslateY, {
+        toValue: -36,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setBadgeText(null));
+  };
+
+  const handleToggle = async () => {
+    if (isCompleted && !canUnmark) return;
+    try {
+      const result = await toggleTaskComplete(sessionId, task.id, memberId);
+      if (result.action === 'completed') {
+        showBadge(`+${result.points} pts!`);
+      }
+    } catch {
+      // silently ignore errors (e.g. permission denied)
+    }
+  };
+
   return (
     <View style={[styles.taskRow, isCompleted && styles.taskRowCompleted]}>
+      <TouchableOpacity
+        onPress={handleToggle}
+        style={styles.checkbox}
+        disabled={isCompleted && !canUnmark}
+      >
+        <View style={[styles.checkboxInner, isCompleted && styles.checkboxChecked]}>
+          {isCompleted && <Text style={styles.checkmark}>✓</Text>}
+        </View>
+      </TouchableOpacity>
       <View style={[styles.assigneeBadge, { backgroundColor: assigneeColor }]}>
         <Text style={styles.assigneeInitial}>{assigneeInitial}</Text>
       </View>
@@ -76,7 +131,19 @@ function TaskItem({ task, memberId }: { task: Task; memberId: string }) {
           </Text>
         </View>
       </View>
-      <Text style={styles.taskPoints}>{task.points} pts</Text>
+      <View>
+        <Text style={styles.taskPoints}>{task.points} pts</Text>
+        {badgeText && (
+          <Animated.View
+            style={[
+              styles.pointsBadge,
+              { opacity: badgeOpacity, transform: [{ translateY: badgeTranslateY }] },
+            ]}
+          >
+            <Text style={styles.pointsBadgeText}>{badgeText}</Text>
+          </Animated.View>
+        )}
+      </View>
     </View>
   );
 }
@@ -177,7 +244,7 @@ export default function HomeScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <TaskItem task={item} memberId={memberId} />
+            <TaskItem task={item} memberId={memberId} sessionId={sessionId ?? ''} />
           )}
         />
       )}
@@ -269,6 +336,42 @@ const styles = StyleSheet.create({
   },
   taskRowCompleted: {
     opacity: 0.5,
+  },
+  checkbox: {
+    marginRight: 10,
+  },
+  checkboxInner: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  checkboxChecked: {
+    backgroundColor: '#E94560',
+    borderColor: '#E94560',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  pointsBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: '100%',
+    backgroundColor: '#E94560',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  pointsBadgeText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
   assigneeBadge: {
     width: 32,

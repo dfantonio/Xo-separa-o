@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   ScrollView,
   Animated,
+  PanResponder,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -15,7 +17,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import * as SecureStore from 'expo-secure-store';
 import { db } from '../config/firebase';
 import { DIFFICULTY_CONFIG } from '../constants/difficulty';
-import { toggleTaskComplete } from '../services/taskService';
+import { toggleTaskComplete, deleteTask } from '../services/taskService';
 import type { Task, DayOfWeek } from '../types/task';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -38,6 +40,8 @@ const DAY_TABS: { label: string; value: DayOfWeek }[] = [
   { label: 'Dom', value: 0 },
 ];
 
+const ACTION_WIDTH = 140; // total width of the two action buttons revealed on swipe
+
 function docDataToTask(id: string, data: Record<string, unknown>): Task {
   return {
     id,
@@ -56,10 +60,12 @@ function TaskItem({
   task,
   memberId,
   sessionId,
+  navigation,
 }: {
   task: Task;
   memberId: string;
   sessionId: string;
+  navigation: NavigationProp;
 }) {
   const isCompleted = task.completedBy !== null;
   const canUnmark = isCompleted && task.completedBy === memberId;
@@ -75,6 +81,48 @@ function TaskItem({
   const [badgeText, setBadgeText] = useState<string | null>(null);
   const badgeOpacity = useRef(new Animated.Value(0)).current;
   const badgeTranslateY = useRef(new Animated.Value(0)).current;
+
+  // Swipe state
+  const translateX = useRef(new Animated.Value(0)).current;
+  const isOpen = useRef(false);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 8 && Math.abs(gestureState.dy) < 20,
+      onPanResponderMove: (_, gestureState) => {
+        const newX = isOpen.current
+          ? Math.min(0, -ACTION_WIDTH + gestureState.dx)
+          : Math.min(0, gestureState.dx);
+        translateX.setValue(newX);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const threshold = ACTION_WIDTH / 2;
+        const shouldOpen = isOpen.current
+          ? gestureState.dx < threshold
+          : gestureState.dx < -threshold;
+
+        if (shouldOpen) {
+          Animated.spring(translateX, {
+            toValue: -ACTION_WIDTH,
+            useNativeDriver: true,
+          }).start();
+          isOpen.current = true;
+        } else {
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+          isOpen.current = false;
+        }
+      },
+    })
+  ).current;
+
+  const closeSwipe = () => {
+    Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+    isOpen.current = false;
+  };
 
   const showBadge = (text: string) => {
     setBadgeText(text);
@@ -107,43 +155,86 @@ function TaskItem({
     }
   };
 
+  const handleEdit = () => {
+    closeSwipe();
+    navigation.navigate('CreateTask', { task });
+  };
+
+  const handleDeletePress = () => {
+    closeSwipe();
+    Alert.alert(
+      'Excluir tarefa',
+      `Deseja excluir "${task.name}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteTask(sessionId, task.id);
+            } catch {
+              Alert.alert('Erro', 'Não foi possível excluir a tarefa.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
-    <View style={[styles.taskRow, isCompleted && styles.taskRowCompleted]}>
-      <TouchableOpacity
-        onPress={handleToggle}
-        style={styles.checkbox}
-        disabled={isCompleted && !canUnmark}
+    <View style={styles.swipeContainer}>
+      {/* Action buttons revealed on swipe */}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+          <Text style={styles.actionButtonText}>Editar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
+          <Text style={styles.actionButtonText}>Excluir</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Swipeable task row */}
+      <Animated.View
+        style={[styles.taskRow, isCompleted && styles.taskRowCompleted, { transform: [{ translateX }] }]}
+        {...panResponder.panHandlers}
       >
-        <View style={[styles.checkboxInner, isCompleted && styles.checkboxChecked]}>
-          {isCompleted && <Text style={styles.checkmark}>✓</Text>}
+        <TouchableOpacity
+          onPress={handleToggle}
+          style={styles.checkbox}
+          disabled={isCompleted && !canUnmark}
+        >
+          <View style={[styles.checkboxInner, isCompleted && styles.checkboxChecked]}>
+            {isCompleted && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+        </TouchableOpacity>
+        <View style={[styles.assigneeBadge, { backgroundColor: assigneeColor }]}>
+          <Text style={styles.assigneeInitial}>{assigneeInitial}</Text>
         </View>
-      </TouchableOpacity>
-      <View style={[styles.assigneeBadge, { backgroundColor: assigneeColor }]}>
-        <Text style={styles.assigneeInitial}>{assigneeInitial}</Text>
-      </View>
-      <View style={styles.taskInfo}>
-        <Text style={[styles.taskName, isCompleted && styles.taskNameDone]}>
-          {task.name}
-        </Text>
-        <View style={styles.diffBadge}>
-          <Text style={styles.diffText}>
-            {diff.emoji} {diff.label}
+        <View style={styles.taskInfo}>
+          <Text style={[styles.taskName, isCompleted && styles.taskNameDone]}>
+            {task.name}
           </Text>
+          <View style={styles.diffBadge}>
+            <Text style={styles.diffText}>
+              {diff.emoji} {diff.label}
+            </Text>
+          </View>
         </View>
-      </View>
-      <View>
-        <Text style={styles.taskPoints}>{task.points} pts</Text>
-        {badgeText && (
-          <Animated.View
-            style={[
-              styles.pointsBadge,
-              { opacity: badgeOpacity, transform: [{ translateY: badgeTranslateY }] },
-            ]}
-          >
-            <Text style={styles.pointsBadgeText}>{badgeText}</Text>
-          </Animated.View>
-        )}
-      </View>
+        <View>
+          <Text style={styles.taskPoints}>{task.points} pts</Text>
+          {badgeText && (
+            <Animated.View
+              style={[
+                styles.pointsBadge,
+                { opacity: badgeOpacity, transform: [{ translateY: badgeTranslateY }] },
+              ]}
+            >
+              <Text style={styles.pointsBadgeText}>{badgeText}</Text>
+            </Animated.View>
+          )}
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -244,7 +335,12 @@ export default function HomeScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <TaskItem task={item} memberId={memberId} sessionId={sessionId ?? ''} />
+            <TaskItem
+              task={item}
+              memberId={memberId}
+              sessionId={sessionId ?? ''}
+              navigation={navigation}
+            />
           )}
         />
       )}
@@ -321,13 +417,42 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 100,
   },
+  swipeContainer: {
+    marginBottom: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  actionButtons: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: ACTION_WIDTH,
+    flexDirection: 'row',
+  },
+  editButton: {
+    flex: 1,
+    backgroundColor: '#3A86FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButton: {
+    flex: 1,
+    backgroundColor: '#e74c3c',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
   taskRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f9f9f9',
     borderRadius: 12,
     padding: 12,
-    marginBottom: 10,
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

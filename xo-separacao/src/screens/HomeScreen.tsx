@@ -287,7 +287,15 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Xô Separação</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Xô Separação</Text>
+        <TouchableOpacity
+          style={styles.rankingButton}
+          onPress={() => navigation.navigate('Ranking')}
+        >
+          <Text style={styles.rankingButtonText}>🏅</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Day-of-week selector */}
       <ScrollView
@@ -360,13 +368,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 48,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    paddingTop: 48,
-    paddingBottom: 12,
     color: '#E94560',
+    flex: 1,
+  },
+  rankingButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rankingButtonText: {
+    fontSize: 24,
   },
   daySelector: {
     paddingHorizontal: 12,

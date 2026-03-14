@@ -6,4 +6,5 @@ export type RootStackParamList = {
   JoinSession: undefined;
   Home: undefined;
   CreateTask: { task?: Task } | undefined;
+  Ranking: undefined;
 };

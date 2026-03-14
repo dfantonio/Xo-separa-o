@@ -8,6 +8,7 @@ import CreateSessionScreen from './src/screens/CreateSessionScreen';
 import JoinSessionScreen from './src/screens/JoinSessionScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import CreateTaskScreen from './src/screens/CreateTaskScreen';
+import RankingScreen from './src/screens/RankingScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -20,6 +21,7 @@ export default function App() {
         <Stack.Screen name="JoinSession" component={JoinSessionScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
+        <Stack.Screen name="Ranking" component={RankingScreen} />
       </Stack.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>

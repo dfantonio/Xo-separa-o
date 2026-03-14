@@ -1,3 +1,16 @@
+## 2026-03-14 - US-004
+- Implemented JoinSessionScreen: code + name inputs, Firestore query by code, memberB validation, SecureStore persistence, navigation to Home
+- Files changed:
+  - `xo-separacao/src/screens/JoinSessionScreen.tsx` – full implementation
+- **Learnings for future iterations:**
+  - Query Firestore by field: `query(collection(db, 'sessions'), where('code', '==', value))` then `getDocs`
+  - Check `snapshot.empty` for not found; check `sessionData.memberB !== null` for full session
+  - `updateDoc(doc(db, 'sessions', id), { field: value })` for partial updates
+  - Input errors shown inline (not via Alert) using state variables per field
+  - Browser verification not available; manual verification needed
+
+---
+
 ## Codebase Patterns
 - All app code lives under `/workspace/xo-separacao/` (not the workspace root)
 - Navigation stack types defined in `src/navigation/types.ts` as `RootStackParamList`

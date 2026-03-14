@@ -1,3 +1,20 @@
+## 2026-03-14 - US-010
+- Added swipe-left gesture on each `TaskItem` to reveal 'Editar' and 'Excluir' action buttons
+- Implemented with `PanResponder` + `Animated.Value` (no extra dependencies) — snaps open/closed at 50% threshold
+- 'Editar' closes the swipe and navigates to `CreateTaskScreen` with the task pre-filled (already supported)
+- 'Excluir' closes swipe and shows `Alert.alert` confirmation before calling `deleteTask`
+- Any member can edit or delete any task
+- Passed `navigation` prop down to `TaskItem` (previously used `useNavigation` hook internally)
+- Files changed:
+  - `xo-separacao/src/screens/HomeScreen.tsx` – added `PanResponder` swipe, action buttons, delete confirmation
+- **Learnings for future iterations:**
+  - `PanResponder` + `Animated` is sufficient for swipe-to-reveal; no need for `react-native-gesture-handler` for simple cases
+  - Wrap task row in a `swipeContainer` with `overflow: 'hidden'` so action buttons are clipped until revealed
+  - `Alert.alert` with `style: 'destructive'` is the idiomatic RN pattern for delete confirmation
+  - Browser verification not available; manual verification needed
+
+---
+
 ## 2026-03-14 - US-009
 - Added `toggleTaskComplete` to `taskService.ts` using Firestore `runTransaction` to atomically update task fields and session score
 - Checkbox added to each `TaskItem` in `HomeScreen.tsx`; tapping completes/uncompletes the task

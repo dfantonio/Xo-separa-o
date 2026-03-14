@@ -1,0 +1,25 @@
+# Ralph Progress Log
+Started: Sat Mar 14 16:14:00 PDT 2026
+---
+
+## Codebase Patterns
+- Project root is `/workspace/xo-separacao/` — all Expo/React Native code lives there
+- TypeScript typecheck: run `npx tsc --noEmit` from inside the `xo-separacao/` directory
+- Firebase is `firebase@^12.x` (modular API) — use `import { getFirestore } from 'firebase/firestore'` (not compat layer)
+- Environment variables accessed via `process.env.FIREBASE_*` — defined in `.env.example`
+- Directory structure: `src/config/`, `src/types/`, `src/services/`, `src/constants/`, `src/screens/`, `src/navigation/`
+
+---
+
+## 2026-03-14 - US-001
+- Created Expo TypeScript project with `create-expo-app` using `blank-typescript` template
+- Installed all required dependencies: firebase, expo-notifications, expo-secure-store, expo-task-manager, expo-background-fetch, @react-navigation/native, @react-navigation/stack, react-native-safe-area-context, react-native-screens
+- Created `src/config/firebase.ts` with Firebase App initialization and Firestore export (`db`)
+- Created `.env.example` with all required Firebase environment variable placeholders
+- Files changed: `xo-separacao/src/config/firebase.ts`, `xo-separacao/.env.example`, all Expo boilerplate files
+- **Learnings for future iterations:**
+  - Firebase v12 uses modular API — import from `firebase/firestore`, `firebase/app`, etc.
+  - `process.env.*` variables are `string | undefined`, which is compatible with `FirebaseOptions` fields
+  - TypeScript strict mode is enabled — be careful with null/undefined
+  - `node_modules/` is gitignored by the Expo template's `.gitignore`
+---

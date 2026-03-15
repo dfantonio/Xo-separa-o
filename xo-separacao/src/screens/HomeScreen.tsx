@@ -19,6 +19,7 @@ import { db } from '../config/firebase';
 import { DIFFICULTY_CONFIG } from '../constants/difficulty';
 import { toggleTaskComplete, deleteTask } from '../services/taskService';
 import { checkAndResetMonthlyScore } from '../services/sessionService';
+import { scheduleTaskReminders, cancelTaskReminders } from '../services/notificationService';
 import type { Task, DayOfWeek } from '../types/task';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -62,11 +63,13 @@ function TaskItem({
   memberId,
   sessionId,
   navigation,
+  onTaskCompleted,
 }: {
   task: Task;
   memberId: string;
   sessionId: string;
   navigation: NavigationProp;
+  onTaskCompleted: () => void;
 }) {
   const isCompleted = task.completedBy !== null;
   const canUnmark = isCompleted && task.completedBy === memberId;
@@ -150,6 +153,7 @@ function TaskItem({
       const result = await toggleTaskComplete(sessionId, task.id, memberId);
       if (result.action === 'completed') {
         showBadge(`+${result.points} pts!`);
+        onTaskCompleted();
       }
     } catch {
       // silently ignore errors (e.g. permission denied)
@@ -260,6 +264,10 @@ export default function HomeScreen() {
         checkAndResetMonthlyScore(sid).catch(() => {
           // Silently ignore reset errors (e.g. offline)
         });
+        // Schedule daily task reminders at 15h and 20h (skips if already scheduled)
+        scheduleTaskReminders().catch(() => {
+          // Silently ignore if permissions denied or scheduling fails
+        });
       }
     }
     loadSession();
@@ -291,6 +299,16 @@ export default function HomeScreen() {
   const pending = tasks.filter((t) => t.completedBy === null);
   const completed = tasks.filter((t) => t.completedBy !== null);
   const sorted = [...pending, ...completed];
+
+  // Called after a task on today's day is completed; cancels reminders if all done
+  const handleTaskCompleted = () => {
+    if (selectedDay !== today) return;
+    // After state update, pending will have one fewer item; cancel if none left after this completion
+    const remainingPending = tasks.filter((t) => t.completedBy === null).length;
+    if (remainingPending <= 1) {
+      cancelTaskReminders().catch(() => {});
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -355,6 +373,7 @@ export default function HomeScreen() {
               memberId={memberId}
               sessionId={sessionId ?? ''}
               navigation={navigation}
+              onTaskCompleted={handleTaskCompleted}
             />
           )}
         />

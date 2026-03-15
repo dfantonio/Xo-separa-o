@@ -110,15 +110,13 @@ export async function toggleTaskComplete(
       });
       return { action: 'completed' as const, points };
     } else {
-      if (taskData.completedBy !== memberId) {
-        throw new Error('Only the person who completed this task can unmark it');
-      }
+      const originalCompleter = taskData.completedBy as string;
       transaction.update(taskRef, {
         completedBy: null,
         completedAt: null,
       });
       transaction.update(sessionRef, {
-        [`${memberId}.score`]: increment(-points),
+        [`${originalCompleter}.score`]: increment(-points),
       });
       return { action: 'uncompleted' as const, points };
     }

@@ -17,7 +17,7 @@ export default function OnboardingScreen({ navigation }: Props) {
       }
     }
     checkSession();
-  }, [navigation]);
+  }, []);
 
   return (
     <View style={styles.container}>

@@ -72,7 +72,6 @@ function TaskItem({
   onTaskCompleted: () => void;
 }) {
   const isCompleted = task.completedBy !== null;
-  const canUnmark = isCompleted && task.completedBy === memberId;
   const diff = DIFFICULTY_CONFIG[task.difficulty];
   const assigneeColor = MEMBER_COLORS[task.assignedTo] ?? '#888';
   const assigneeInitial =
@@ -148,15 +147,15 @@ function TaskItem({
   };
 
   const handleToggle = async () => {
-    if (isCompleted && !canUnmark) return;
     try {
       const result = await toggleTaskComplete(sessionId, task.id, memberId);
       if (result.action === 'completed') {
         showBadge(`+${result.points} pts!`);
         onTaskCompleted();
       }
-    } catch {
-      // silently ignore errors (e.g. permission denied)
+    } catch (error) {
+      console.error('toggleTaskComplete error:', error);
+      Alert.alert('Erro', String(error));
     }
   };
 
@@ -202,42 +201,43 @@ function TaskItem({
       {/* Swipeable task row */}
       <Animated.View
         style={[styles.taskRow, isCompleted && styles.taskRowCompleted, { transform: [{ translateX }] }]}
-        {...panResponder.panHandlers}
       >
         <TouchableOpacity
           onPress={handleToggle}
           style={styles.checkbox}
-          disabled={isCompleted && !canUnmark}
+          disabled={false}
         >
           <View style={[styles.checkboxInner, isCompleted && styles.checkboxChecked]}>
             {isCompleted && <Text style={styles.checkmark}>✓</Text>}
           </View>
         </TouchableOpacity>
-        <View style={[styles.assigneeBadge, { backgroundColor: assigneeColor }]}>
-          <Text style={styles.assigneeInitial}>{assigneeInitial}</Text>
-        </View>
-        <View style={styles.taskInfo}>
-          <Text style={[styles.taskName, isCompleted && styles.taskNameDone]}>
-            {task.name}
-          </Text>
-          <View style={styles.diffBadge}>
-            <Text style={styles.diffText}>
-              {diff.emoji} {diff.label}
-            </Text>
+        <View style={styles.swipeArea} {...panResponder.panHandlers}>
+          <View style={[styles.assigneeBadge, { backgroundColor: assigneeColor }]}>
+            <Text style={styles.assigneeInitial}>{assigneeInitial}</Text>
           </View>
-        </View>
-        <View>
-          <Text style={styles.taskPoints}>{task.points} pts</Text>
-          {badgeText && (
-            <Animated.View
-              style={[
-                styles.pointsBadge,
-                { opacity: badgeOpacity, transform: [{ translateY: badgeTranslateY }] },
-              ]}
-            >
-              <Text style={styles.pointsBadgeText}>{badgeText}</Text>
-            </Animated.View>
-          )}
+          <View style={styles.taskInfo}>
+            <Text style={[styles.taskName, isCompleted && styles.taskNameDone]}>
+              {task.name}
+            </Text>
+            <View style={styles.diffBadge}>
+              <Text style={styles.diffText}>
+                {diff.emoji} {diff.label}
+              </Text>
+            </View>
+          </View>
+          <View>
+            <Text style={styles.taskPoints}>{task.points} pts</Text>
+            {badgeText && (
+              <Animated.View
+                style={[
+                  styles.pointsBadge,
+                  { opacity: badgeOpacity, transform: [{ translateY: badgeTranslateY }] },
+                ]}
+              >
+                <Text style={styles.pointsBadgeText}>{badgeText}</Text>
+              </Animated.View>
+            )}
+          </View>
         </View>
       </Animated.View>
     </View>
@@ -281,9 +281,11 @@ export default function HomeScreen() {
     const q = query(tasksRef, where('dayOfWeek', '==', selectedDay));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const loaded: Task[] = snapshot.docs.map((d) =>
-        docDataToTask(d.id, d.data() as Record<string, unknown>)
-      );
+      const loaded: Task[] = snapshot.docs.map((d) => {
+        const raw = d.data();
+        console.log('TASK RAW DATA:', JSON.stringify({ id: d.id, completedBy: raw.completedBy, completedByType: typeof raw.completedBy }));
+        return docDataToTask(d.id, raw as Record<string, unknown>);
+      });
       // pending first, completed last
       loaded.sort((a, b) => {
         if ((a.completedBy === null) === (b.completedBy === null)) return 0;
@@ -511,6 +513,11 @@ const styles = StyleSheet.create({
   },
   taskRowCompleted: {
     opacity: 0.5,
+  },
+  swipeArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   checkbox: {
     marginRight: 10,

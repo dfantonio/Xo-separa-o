@@ -1,3 +1,38 @@
+## 2026-03-14 - US-012
+- Created `src/services/sessionService.ts` with `checkAndResetMonthlyScore` function
+- On app open (HomeScreen mount), reads `lastResetMonth` from the session doc and compares to current 'YYYY-MM'
+- If different, runs a Firestore `runTransaction` to re-check and atomically zero `memberA.score` and `memberB.score`, then set `lastResetMonth` to current month
+- Transaction prevents double-reset when two devices open simultaneously (re-check inside transaction)
+- Error silently ignored so offline users aren't blocked
+- Files changed:
+  - `xo-separacao/src/services/sessionService.ts` – new service with `checkAndResetMonthlyScore`
+  - `xo-separacao/src/screens/HomeScreen.tsx` – calls `checkAndResetMonthlyScore` after loading sessionId
+- **Learnings for future iterations:**
+  - Do a quick `getDoc` pre-check before starting a transaction to avoid unnecessary transaction overhead
+  - `transaction.update` with dot-notation keys (`'memberA.score'`) works for nested field updates in Firestore
+  - Catch and silently ignore async reset errors so offline users can still use the app
+
+---
+
+## 2026-03-14 - US-011
+- Created `RankingScreen` with real-time Firestore `onSnapshot` listener on the session document
+- Displays memberA and memberB cards with name, score, and 🏆 trophy for the winner (or both if tied)
+- Shows current month label (e.g. "Março 2026") and next reset date (e.g. "01/04/2026") computed dynamically
+- Added 🏅 button in `HomeScreen` header to navigate to `RankingScreen`
+- Added `Ranking` route to `RootStackParamList` and registered in `App.tsx`
+- Files changed:
+  - `xo-separacao/src/screens/RankingScreen.tsx` – new screen
+  - `xo-separacao/src/navigation/types.ts` – added Ranking route
+  - `xo-separacao/App.tsx` – registered RankingScreen
+  - `xo-separacao/src/screens/HomeScreen.tsx` – added header with ranking button + styles
+- **Learnings for future iterations:**
+  - Session doc structure: `{ memberA: { name, score }, memberB: { name, score } | null }`
+  - Use `onSnapshot(doc(db, 'sessions', sid))` for real-time session data (not collection query)
+  - `init()` returns unsubscribe; call it with `.then()` to handle the async return properly
+  - Browser verification not available; manual verification needed
+
+---
+
 ## 2026-03-14 - US-010
 - Added swipe-left gesture on each `TaskItem` to reveal 'Editar' and 'Excluir' action buttons
 - Implemented with `PanResponder` + `Animated.Value` (no extra dependencies) — snaps open/closed at 50% threshold

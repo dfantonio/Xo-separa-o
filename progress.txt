@@ -1,3 +1,20 @@
+## 2026-03-14 - US-013
+- Created `src/services/notificationService.ts` with `scheduleTaskReminders` and `cancelTaskReminders`
+- `scheduleTaskReminders`: requests permissions via `Notifications.requestPermissionsAsync()`, then schedules daily notifications at 15h00 and 20h00 using `SchedulableTriggerInputTypes.DAILY`; uses fixed identifiers to avoid duplicates (checks existing scheduled notifications before adding)
+- `cancelTaskReminders`: cancels both reminder notifications by their identifiers
+- Integrated into `HomeScreen`: `scheduleTaskReminders()` called on mount; `cancelTaskReminders()` called after task completion when no pending tasks remain for today
+- `setNotificationHandler` configured with `shouldShowAlert: true` to display notifications in foreground
+- Files changed:
+  - `xo-separacao/src/services/notificationService.ts` – new service
+  - `xo-separacao/src/screens/HomeScreen.tsx` – schedule on mount, cancel on all-done, `onTaskCompleted` prop to TaskItem
+- **Learnings for future iterations:**
+  - expo-notifications v55+ requires `type: SchedulableTriggerInputTypes.DAILY` (not the old `{ hour, minute, repeats }` object)
+  - Use stable `identifier` strings in `scheduleNotificationAsync` to enable idempotent re-scheduling
+  - `getAllScheduledNotificationsAsync()` returns array of `{ identifier, ... }` — check identifiers to avoid duplicates
+  - Browser/device verification not available; manual verification needed
+
+---
+
 ## 2026-03-14 - US-012
 - Created `src/services/sessionService.ts` with `checkAndResetMonthlyScore` function
 - On app open (HomeScreen mount), reads `lastResetMonth` from the session doc and compares to current 'YYYY-MM'

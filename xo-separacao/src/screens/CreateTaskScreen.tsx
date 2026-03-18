@@ -151,6 +151,7 @@ export default function CreateTaskScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
+      bounces={false}
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.title}>
@@ -276,6 +277,8 @@ export default function CreateTaskScreen() {
         <Text style={styles.errorText}>{difficultyError}</Text>
       ) : null}
 
+      <View style={styles.spacer} />
+
       {/* Save */}
       <TouchableOpacity
         style={[styles.saveButton, loading && styles.buttonDisabled]}
@@ -305,6 +308,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   content: {
+    flexGrow: 1,
     padding: 24,
     paddingTop: 56,
   },
@@ -447,5 +451,9 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: "#888",
     fontSize: 15,
+  },
+  spacer: {
+    flexGrow: 1,
+    minHeight: 32,
   },
 });

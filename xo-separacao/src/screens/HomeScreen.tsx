@@ -193,7 +193,7 @@ function TaskItem({
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteTask(sessionId, task.id);
+              await deleteTask(sessionId, task.id, weekKey);
             } catch {
               Alert.alert('Erro', 'Não foi possível excluir a tarefa.');
             }

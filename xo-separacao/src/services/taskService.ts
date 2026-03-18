@@ -3,7 +3,6 @@ import {
   doc,
   addDoc,
   updateDoc,
-  deleteDoc,
   deleteField,
   query,
   where,
@@ -75,9 +74,37 @@ export async function updateTask(
   await updateDoc(taskRef, payload);
 }
 
-export async function deleteTask(sessionId: string, taskId: string): Promise<void> {
+export async function deleteTask(sessionId: string, taskId: string, weekKey: string): Promise<void> {
   const taskRef = doc(db, 'sessions', sessionId, 'tasks', taskId);
-  await deleteDoc(taskRef);
+  const sessionRef = doc(db, 'sessions', sessionId);
+
+  await runTransaction(db, async (transaction) => {
+    const taskSnap = await transaction.get(taskRef);
+    if (!taskSnap.exists()) return;
+
+    const taskData = taskSnap.data();
+    const points = taskData.points as Points;
+    const isRecurring = taskData.recurring ?? false;
+
+    if (isRecurring) {
+      const completions = taskData.completions ?? {};
+      if (completions[weekKey]) {
+        const completer = completions[weekKey].by as string;
+        transaction.update(sessionRef, {
+          [`${completer}.score`]: increment(-points),
+        });
+      }
+    } else {
+      if (taskData.completedBy) {
+        const completer = taskData.completedBy as string;
+        transaction.update(sessionRef, {
+          [`${completer}.score`]: increment(-points),
+        });
+      }
+    }
+
+    transaction.delete(taskRef);
+  });
 }
 
 export async function getTasksForDay(sessionId: string, day: DayOfWeek): Promise<Task[]> {

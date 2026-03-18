@@ -5,14 +5,21 @@ export type AssignedTo = 'memberA' | 'memberB' | 'both';
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'heroic';
 export type Points = 5 | 10 | 20 | 40;
 
+export interface WeekCompletion {
+  by: string;
+  at: Timestamp;
+}
+
 export interface Task {
   id: string;
   name: string;
-  dayOfWeek: DayOfWeek;
+  days: DayOfWeek[];
+  recurring: boolean;
   assignedTo: AssignedTo;
   difficulty: Difficulty;
   points: Points;
   completedBy: string | null;
   completedAt: Timestamp | null;
+  completions: Record<string, WeekCompletion>;
   createdAt: Timestamp;
 }

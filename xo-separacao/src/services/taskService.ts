@@ -4,6 +4,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   query,
   where,
   getDocs,
@@ -17,17 +18,19 @@ import { db } from '../config/firebase';
 import { Task, DayOfWeek, AssignedTo, Difficulty, Points } from '../types/task';
 import { DIFFICULTY_CONFIG } from '../constants/difficulty';
 
-function docToTask(docSnap: QueryDocumentSnapshot<DocumentData>): Task {
+export function docToTask(docSnap: QueryDocumentSnapshot<DocumentData>): Task {
   const data = docSnap.data();
   return {
     id: docSnap.id,
     name: data.name,
-    dayOfWeek: data.dayOfWeek,
+    days: data.days ?? [data.dayOfWeek],
+    recurring: data.recurring ?? false,
     assignedTo: data.assignedTo,
     difficulty: data.difficulty,
     points: data.points,
     completedBy: data.completedBy ?? null,
     completedAt: data.completedAt ?? null,
+    completions: data.completions ?? {},
     createdAt: data.createdAt,
   };
 }
@@ -36,7 +39,8 @@ export async function createTask(
   sessionId: string,
   params: {
     name: string;
-    dayOfWeek: DayOfWeek;
+    days: DayOfWeek[];
+    recurring: boolean;
     assignedTo: AssignedTo;
     difficulty: Difficulty;
   }
@@ -45,12 +49,14 @@ export async function createTask(
   const tasksRef = collection(db, 'sessions', sessionId, 'tasks');
   const docRef = await addDoc(tasksRef, {
     name: params.name,
-    dayOfWeek: params.dayOfWeek,
+    days: params.days,
+    recurring: params.recurring,
     assignedTo: params.assignedTo,
     difficulty: params.difficulty,
     points,
     completedBy: null,
     completedAt: null,
+    completions: {},
     createdAt: serverTimestamp(),
   });
   return docRef.id;
@@ -59,7 +65,7 @@ export async function createTask(
 export async function updateTask(
   sessionId: string,
   taskId: string,
-  updates: Partial<Pick<Task, 'name' | 'dayOfWeek' | 'assignedTo' | 'difficulty' | 'completedBy' | 'completedAt'>>
+  updates: Partial<Pick<Task, 'name' | 'days' | 'recurring' | 'assignedTo' | 'difficulty'>>
 ): Promise<void> {
   const taskRef = doc(db, 'sessions', sessionId, 'tasks', taskId);
   const payload: DocumentData = { ...updates };
@@ -74,9 +80,9 @@ export async function deleteTask(sessionId: string, taskId: string): Promise<voi
   await deleteDoc(taskRef);
 }
 
-export async function getTasksForDay(sessionId: string, dayOfWeek: DayOfWeek): Promise<Task[]> {
+export async function getTasksForDay(sessionId: string, day: DayOfWeek): Promise<Task[]> {
   const tasksRef = collection(db, 'sessions', sessionId, 'tasks');
-  const q = query(tasksRef, where('dayOfWeek', '==', dayOfWeek));
+  const q = query(tasksRef, where('days', 'array-contains', day));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docToTask);
 }
@@ -84,7 +90,8 @@ export async function getTasksForDay(sessionId: string, dayOfWeek: DayOfWeek): P
 export async function toggleTaskComplete(
   sessionId: string,
   taskId: string,
-  memberId: string
+  memberId: string,
+  weekKey: string
 ): Promise<{ action: 'completed' | 'uncompleted'; points: Points }> {
   const taskRef = doc(db, 'sessions', sessionId, 'tasks', taskId);
   const sessionRef = doc(db, 'sessions', sessionId);
@@ -99,26 +106,49 @@ export async function toggleTaskComplete(
 
     const taskData = taskSnap.data();
     const points = taskData.points as Points;
+    const isRecurring = taskData.recurring ?? false;
 
-    if (taskData.completedBy === null) {
-      transaction.update(taskRef, {
-        completedBy: memberId,
-        completedAt: serverTimestamp(),
-      });
-      transaction.update(sessionRef, {
-        [`${memberId}.score`]: increment(points),
-      });
-      return { action: 'completed' as const, points };
+    if (isRecurring) {
+      const completions = taskData.completions ?? {};
+      if (!completions[weekKey]) {
+        transaction.update(taskRef, {
+          [`completions.${weekKey}`]: { by: memberId, at: serverTimestamp() },
+        });
+        transaction.update(sessionRef, {
+          [`${memberId}.score`]: increment(points),
+        });
+        return { action: 'completed' as const, points };
+      } else {
+        const originalCompleter = completions[weekKey].by as string;
+        transaction.update(taskRef, {
+          [`completions.${weekKey}`]: deleteField(),
+        });
+        transaction.update(sessionRef, {
+          [`${originalCompleter}.score`]: increment(-points),
+        });
+        return { action: 'uncompleted' as const, points };
+      }
     } else {
-      const originalCompleter = taskData.completedBy as string;
-      transaction.update(taskRef, {
-        completedBy: null,
-        completedAt: null,
-      });
-      transaction.update(sessionRef, {
-        [`${originalCompleter}.score`]: increment(-points),
-      });
-      return { action: 'uncompleted' as const, points };
+      if (taskData.completedBy === null) {
+        transaction.update(taskRef, {
+          completedBy: memberId,
+          completedAt: serverTimestamp(),
+        });
+        transaction.update(sessionRef, {
+          [`${memberId}.score`]: increment(points),
+        });
+        return { action: 'completed' as const, points };
+      } else {
+        const originalCompleter = taskData.completedBy as string;
+        transaction.update(taskRef, {
+          completedBy: null,
+          completedAt: null,
+        });
+        transaction.update(sessionRef, {
+          [`${originalCompleter}.score`]: increment(-points),
+        });
+        return { action: 'uncompleted' as const, points };
+      }
     }
   });
 }

@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Switch,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -41,7 +42,8 @@ export default function CreateTaskScreen() {
   const [memberId, setMemberId] = useState<string | null>(null);
 
   const [name, setName] = useState(editingTask?.name ?? '');
-  const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek | null>(editingTask?.dayOfWeek ?? null);
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(editingTask?.days ?? []);
+  const [recurring, setRecurring] = useState(editingTask?.recurring ?? true);
   const [assigneeChoice, setAssigneeChoice] = useState<'me' | 'partner' | 'both' | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(editingTask?.difficulty ?? null);
 
@@ -71,6 +73,12 @@ export default function CreateTaskScreen() {
     loadSession();
   }, []);
 
+  function toggleDay(day: DayOfWeek) {
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  }
+
   function resolveAssignedTo(): AssignedTo | null {
     if (!memberId || !assigneeChoice) return null;
     if (assigneeChoice === 'both') return 'both';
@@ -89,8 +97,8 @@ export default function CreateTaskScreen() {
       setNameError('Nome é obrigatório.');
       valid = false;
     }
-    if (dayOfWeek === null) {
-      setDayError('Selecione um dia da semana.');
+    if (selectedDays.length === 0) {
+      setDayError('Selecione ao menos um dia da semana.');
       valid = false;
     }
     if (!assigneeChoice) {
@@ -104,21 +112,23 @@ export default function CreateTaskScreen() {
     if (!valid) return;
 
     const assignedTo = resolveAssignedTo();
-    if (!sessionId || !assignedTo || dayOfWeek === null || !difficulty) return;
+    if (!sessionId || !assignedTo || !difficulty) return;
 
     setLoading(true);
     try {
       if (editingTask) {
         await updateTask(sessionId, editingTask.id, {
           name: name.trim(),
-          dayOfWeek,
+          days: selectedDays,
+          recurring,
           assignedTo,
           difficulty,
         });
       } else {
         await createTask(sessionId, {
           name: name.trim(),
-          dayOfWeek,
+          days: selectedDays,
+          recurring,
           assignedTo,
           difficulty,
         });
@@ -147,22 +157,39 @@ export default function CreateTaskScreen() {
       {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
       <Text style={styles.charCount}>{name.length}/60</Text>
 
-      {/* Day of Week */}
-      <Text style={styles.label}>Dia da semana</Text>
+      {/* Day of Week — multi-select */}
+      <Text style={styles.label}>Dias da semana</Text>
       <View style={styles.chipRow}>
-        {DAYS.map((d) => (
-          <TouchableOpacity
-            key={d.value}
-            style={[styles.chip, dayOfWeek === d.value && styles.chipSelected]}
-            onPress={() => setDayOfWeek(d.value)}
-          >
-            <Text style={[styles.chipText, dayOfWeek === d.value && styles.chipTextSelected]}>
-              {d.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {DAYS.map((d) => {
+          const isSelected = selectedDays.includes(d.value);
+          return (
+            <TouchableOpacity
+              key={d.value}
+              style={[styles.chip, isSelected && styles.chipSelected]}
+              onPress={() => toggleDay(d.value)}
+            >
+              <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                {d.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
       {dayError ? <Text style={styles.errorText}>{dayError}</Text> : null}
+
+      {/* Recurring toggle */}
+      <View style={styles.recurringRow}>
+        <View style={styles.recurringTextContainer}>
+          <Text style={styles.recurringLabel}>Tarefa recorrente</Text>
+          <Text style={styles.recurringHint}>Repete toda semana automaticamente</Text>
+        </View>
+        <Switch
+          value={recurring}
+          onValueChange={setRecurring}
+          trackColor={{ false: '#ddd', true: '#E94560' }}
+          thumbColor="#fff"
+        />
+      </View>
 
       {/* Assignee */}
       <Text style={styles.label}>Responsável</Text>
@@ -293,6 +320,33 @@ const styles = StyleSheet.create({
   chipTextSelected: {
     color: '#fff',
     fontWeight: '600',
+  },
+  recurringRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    marginBottom: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    paddingLeft: 12,
+    paddingRight: 8,
+  },
+  recurringTextContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
+  recurringLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  recurringHint: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
   difficultyRow: {
     flexDirection: 'row',

@@ -17,9 +17,10 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import * as SecureStore from 'expo-secure-store';
 import { db } from '../config/firebase';
 import { DIFFICULTY_CONFIG } from '../constants/difficulty';
-import { toggleTaskComplete, deleteTask } from '../services/taskService';
+import { toggleTaskComplete, deleteTask, docToTask } from '../services/taskService';
 import { checkAndResetMonthlyScore } from '../services/sessionService';
 import { scheduleTaskReminders, cancelTaskReminders } from '../services/notificationService';
+import { getWeekKey } from '../utils/weekKey';
 import type { Task, DayOfWeek } from '../types/task';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -31,7 +32,6 @@ const MEMBER_COLORS: Record<string, string> = {
   both: '#8338EC',
 };
 
-// Display order: Mon–Sun (Seg–Dom), with corresponding DayOfWeek values
 const DAY_TABS: { label: string; value: DayOfWeek }[] = [
   { label: 'Seg', value: 1 },
   { label: 'Ter', value: 2 },
@@ -42,26 +42,20 @@ const DAY_TABS: { label: string; value: DayOfWeek }[] = [
   { label: 'Dom', value: 0 },
 ];
 
-const ACTION_WIDTH = 140; // total width of the two action buttons revealed on swipe
+const ACTION_WIDTH = 140;
 
-function docDataToTask(id: string, data: Record<string, unknown>): Task {
-  return {
-    id,
-    name: data.name as string,
-    dayOfWeek: data.dayOfWeek as DayOfWeek,
-    assignedTo: data.assignedTo as Task['assignedTo'],
-    difficulty: data.difficulty as Task['difficulty'],
-    points: data.points as Task['points'],
-    completedBy: (data.completedBy as string | null) ?? null,
-    completedAt: (data.completedAt as Task['completedAt']) ?? null,
-    createdAt: data.createdAt as Task['createdAt'],
-  };
+function isTaskCompleted(task: Task, weekKey: string): boolean {
+  if (task.recurring) {
+    return weekKey in (task.completions ?? {});
+  }
+  return task.completedBy !== null;
 }
 
 function TaskItem({
   task,
   memberId,
   sessionId,
+  weekKey,
   navigation,
   onTaskCompleted,
   setTasks,
@@ -69,11 +63,12 @@ function TaskItem({
   task: Task;
   memberId: string;
   sessionId: string;
+  weekKey: string;
   navigation: NavigationProp;
   onTaskCompleted: () => void;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
 }) {
-  const isCompleted = task.completedBy !== null;
+  const isCompleted = isTaskCompleted(task, weekKey);
   const diff = DIFFICULTY_CONFIG[task.difficulty];
   const assigneeColor = MEMBER_COLORS[task.assignedTo] ?? '#888';
   const assigneeInitial =
@@ -85,9 +80,7 @@ function TaskItem({
 
   const [badgeText, setBadgeText] = useState<string | null>(null);
   const badgeOpacity = useRef(new Animated.Value(0)).current;
-  const badgeTranslateY = useRef(new Animated.Value(0)).current;
 
-  // Swipe state
   const translateX = useRef(new Animated.Value(0)).current;
   const isOpen = useRef(false);
 
@@ -132,32 +125,32 @@ function TaskItem({
   const showBadge = (text: string) => {
     setBadgeText(text);
     badgeOpacity.setValue(1);
-    badgeTranslateY.setValue(0);
-    Animated.parallel([
-      Animated.timing(badgeOpacity, {
-        toValue: 0,
-        duration: 1000,
-        delay: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(badgeTranslateY, {
-        toValue: -36,
-        duration: 1500,
-        useNativeDriver: true,
-      }),
-    ]).start(() => setBadgeText(null));
+    Animated.timing(badgeOpacity, {
+      toValue: 0,
+      duration: 1200,
+      delay: 400,
+      useNativeDriver: true,
+    }).start(() => setBadgeText(null));
   };
 
   const handleToggle = async () => {
     const wasCompleted = isCompleted;
 
-    // Optimistic update — reflect change immediately in the UI
+    // Optimistic update
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === task.id
-          ? { ...t, completedBy: wasCompleted ? null : memberId, completedAt: wasCompleted ? null : t.completedAt } as Task
-          : t
-      )
+      prev.map((t) => {
+        if (t.id !== task.id) return t;
+        if (t.recurring) {
+          const newCompletions = { ...t.completions };
+          if (wasCompleted) {
+            delete newCompletions[weekKey];
+          } else {
+            newCompletions[weekKey] = { by: memberId } as Task['completions'][string];
+          }
+          return { ...t, completions: newCompletions };
+        }
+        return { ...t, completedBy: wasCompleted ? null : memberId } as Task;
+      })
     );
 
     if (!wasCompleted) {
@@ -166,15 +159,17 @@ function TaskItem({
     }
 
     try {
-      await toggleTaskComplete(sessionId, task.id, memberId);
+      await toggleTaskComplete(sessionId, task.id, memberId, weekKey);
     } catch (error) {
       // Revert on failure
       setTasks((prev) =>
-        prev.map((t) =>
-          t.id === task.id
-            ? { ...t, completedBy: wasCompleted ? task.completedBy : null, completedAt: wasCompleted ? task.completedAt : null } as Task
-            : t
-        )
+        prev.map((t) => {
+          if (t.id !== task.id) return t;
+          if (t.recurring) {
+            return { ...t, completions: task.completions };
+          }
+          return { ...t, completedBy: task.completedBy, completedAt: task.completedAt } as Task;
+        })
       );
       console.error('toggleTaskComplete error:', error);
       Alert.alert('Erro', 'Não foi possível atualizar a tarefa.');
@@ -210,7 +205,6 @@ function TaskItem({
 
   return (
     <View style={styles.swipeContainer}>
-      {/* Action buttons revealed on swipe */}
       <View style={styles.actionButtons}>
         <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
           <Text style={styles.actionButtonText}>Editar</Text>
@@ -220,15 +214,10 @@ function TaskItem({
         </TouchableOpacity>
       </View>
 
-      {/* Swipeable task row */}
       <Animated.View
         style={[styles.taskRow, isCompleted && styles.taskRowCompleted, { transform: [{ translateX }] }]}
       >
-        <TouchableOpacity
-          onPress={handleToggle}
-          style={styles.checkbox}
-          disabled={false}
-        >
+        <TouchableOpacity onPress={handleToggle} style={styles.checkbox}>
           <View style={[styles.checkboxInner, isCompleted && styles.checkboxChecked]}>
             {isCompleted && <Text style={styles.checkmark}>✓</Text>}
           </View>
@@ -275,6 +264,7 @@ export default function HomeScreen() {
   const [memberId, setMemberId] = useState<string>('memberA');
   const today = new Date().getDay() as DayOfWeek;
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(today);
+  const weekKey = getWeekKey();
 
   useEffect(() => {
     async function loadSession() {
@@ -283,14 +273,8 @@ export default function HomeScreen() {
       setSessionId(sid);
       if (mid) setMemberId(mid);
       if (sid) {
-        // Check and perform monthly score reset if the month has changed
-        checkAndResetMonthlyScore(sid).catch(() => {
-          // Silently ignore reset errors (e.g. offline)
-        });
-        // Schedule daily task reminders at 15h and 20h (skips if already scheduled)
-        scheduleTaskReminders().catch(() => {
-          // Silently ignore if permissions denied or scheduling fails
-        });
+        checkAndResetMonthlyScore(sid).catch(() => {});
+        scheduleTaskReminders().catch(() => {});
       }
     }
     loadSession();
@@ -301,18 +285,15 @@ export default function HomeScreen() {
 
     setLoading(true);
     const tasksRef = collection(db, 'sessions', sessionId, 'tasks');
-    const q = query(tasksRef, where('dayOfWeek', '==', selectedDay));
+    const q = query(tasksRef, where('days', 'array-contains', selectedDay));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const loaded: Task[] = snapshot.docs.map((d) => {
-        const raw = d.data();
-        console.log('TASK RAW DATA:', JSON.stringify({ id: d.id, completedBy: raw.completedBy, completedByType: typeof raw.completedBy }));
-        return docDataToTask(d.id, raw as Record<string, unknown>);
-      });
-      // pending first, completed last
+      const loaded: Task[] = snapshot.docs.map((d) => docToTask(d));
       loaded.sort((a, b) => {
-        if ((a.completedBy === null) === (b.completedBy === null)) return 0;
-        return a.completedBy === null ? -1 : 1;
+        const aCompleted = isTaskCompleted(a, weekKey);
+        const bCompleted = isTaskCompleted(b, weekKey);
+        if (aCompleted === bCompleted) return 0;
+        return aCompleted ? 1 : -1;
       });
       setTasks(loaded);
       setLoading(false);
@@ -321,16 +302,11 @@ export default function HomeScreen() {
     return unsubscribe;
   }, [sessionId, selectedDay]);
 
-  const pending = tasks.filter((t) => t.completedBy === null);
-  const completed = tasks.filter((t) => t.completedBy !== null);
-  const sorted = [...pending, ...completed];
+  const pending = tasks.filter((t) => !isTaskCompleted(t, weekKey));
 
-  // Called after a task on today's day is completed; cancels reminders if all done
   const handleTaskCompleted = () => {
     if (selectedDay !== today) return;
-    // After state update, pending will have one fewer item; cancel if none left after this completion
-    const remainingPending = tasks.filter((t) => t.completedBy === null).length;
-    if (remainingPending <= 1) {
+    if (pending.length <= 1) {
       cancelTaskReminders().catch(() => {});
     }
   };
@@ -347,7 +323,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Day-of-week selector */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -359,18 +334,10 @@ export default function HomeScreen() {
           return (
             <TouchableOpacity
               key={day.value}
-              style={[
-                styles.dayTab,
-                isSelected && styles.dayTabSelected,
-              ]}
+              style={[styles.dayTab, isSelected && styles.dayTabSelected]}
               onPress={() => setSelectedDay(day.value)}
             >
-              <Text
-                style={[
-                  styles.dayTabLabel,
-                  isSelected && styles.dayTabLabelSelected,
-                ]}
-              >
+              <Text style={[styles.dayTabLabel, isSelected && styles.dayTabLabelSelected]}>
                 {day.label}
               </Text>
               {isToday && <View style={styles.todayDot} />}
@@ -381,7 +348,7 @@ export default function HomeScreen() {
 
       {loading ? (
         <ActivityIndicator size="large" color="#E94560" style={styles.loader} />
-      ) : sorted.length === 0 ? (
+      ) : tasks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
             Nenhuma tarefa para hoje. Toque em + para adicionar.
@@ -389,7 +356,7 @@ export default function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          data={sorted}
+          data={tasks}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
@@ -397,6 +364,7 @@ export default function HomeScreen() {
               task={item}
               memberId={memberId}
               sessionId={sessionId ?? ''}
+              weekKey={weekKey}
               navigation={navigation}
               onTaskCompleted={handleTaskCompleted}
               setTasks={setTasks}

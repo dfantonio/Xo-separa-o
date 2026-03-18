@@ -91,22 +91,25 @@ export async function deleteTask(
     const taskData = taskSnap.data();
     const points = taskData.points as Points;
     const isRecurring = taskData.recurring ?? false;
+    const isBoth = taskData.assignedTo === 'both';
+
+    const removeScore = (member: string) => {
+      if (isBoth) {
+        const half = Math.round(points / 2);
+        transaction.update(sessionRef, { ['memberA.score']: increment(-half) });
+        transaction.update(sessionRef, { ['memberB.score']: increment(-half) });
+      } else {
+        transaction.update(sessionRef, { [`${member}.score`]: increment(-points) });
+      }
+    };
 
     if (isRecurring) {
       const completions = taskData.completions ?? {};
       const dayKey = getDayWeekKey(weekKey, scheduledDay);
       const entry = completions[dayKey] ?? completions[weekKey]; // legacy compat
-      if (entry) {
-        transaction.update(sessionRef, {
-          [`${entry.by}.score`]: increment(-points),
-        });
-      }
+      if (entry) removeScore(entry.by);
     } else {
-      if (taskData.completedBy) {
-        transaction.update(sessionRef, {
-          [`${taskData.completedBy}.score`]: increment(-points),
-        });
-      }
+      if (taskData.completedBy) removeScore(taskData.completedBy);
     }
 
     transaction.delete(taskRef);
@@ -141,29 +144,35 @@ export async function toggleTaskComplete(
     const taskData = taskSnap.data();
     const points = taskData.points as Points;
     const isRecurring = taskData.recurring ?? false;
+    const isBoth = taskData.assignedTo === 'both';
+
+    const addScore = (member: string, pts: number) => {
+      if (isBoth) {
+        const half = Math.round(pts / 2);
+        transaction.update(sessionRef, { ['memberA.score']: increment(half) });
+        transaction.update(sessionRef, { ['memberB.score']: increment(half) });
+      } else {
+        transaction.update(sessionRef, { [`${member}.score`]: increment(pts) });
+      }
+    };
 
     if (isRecurring) {
       const completions = taskData.completions ?? {};
       const dayKey = getDayWeekKey(weekKey, scheduledDay);
-      // Check new key first, then legacy key
       const existingKey = completions[dayKey] ? dayKey : completions[weekKey] ? weekKey : null;
 
       if (!existingKey) {
         transaction.update(taskRef, {
           [`completions.${dayKey}`]: { by: memberId, at: serverTimestamp() },
         });
-        transaction.update(sessionRef, {
-          [`${memberId}.score`]: increment(points),
-        });
+        addScore(memberId, points);
         return { action: 'completed' as const, points };
       } else {
         const originalCompleter = completions[existingKey].by as string;
         transaction.update(taskRef, {
           [`completions.${existingKey}`]: deleteField(),
         });
-        transaction.update(sessionRef, {
-          [`${originalCompleter}.score`]: increment(-points),
-        });
+        addScore(originalCompleter, -points as Points);
         return { action: 'uncompleted' as const, points };
       }
     } else {
@@ -172,9 +181,7 @@ export async function toggleTaskComplete(
           completedBy: memberId,
           completedAt: serverTimestamp(),
         });
-        transaction.update(sessionRef, {
-          [`${memberId}.score`]: increment(points),
-        });
+        addScore(memberId, points);
         return { action: 'completed' as const, points };
       } else {
         const originalCompleter = taskData.completedBy as string;
@@ -182,9 +189,7 @@ export async function toggleTaskComplete(
           completedBy: null,
           completedAt: null,
         });
-        transaction.update(sessionRef, {
-          [`${originalCompleter}.score`]: increment(-points),
-        });
+        addScore(originalCompleter, -points as Points);
         return { action: 'uncompleted' as const, points };
       }
     }

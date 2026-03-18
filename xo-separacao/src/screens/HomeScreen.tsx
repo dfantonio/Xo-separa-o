@@ -327,6 +327,7 @@ export default function HomeScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.daySelector}
+        style={styles.daySelectorContainer}
       >
         {DAY_TABS.map((day) => {
           const isSelected = day.value === selectedDay;
@@ -411,6 +412,9 @@ const styles = StyleSheet.create({
   },
   rankingButtonText: {
     fontSize: 24,
+  },
+  daySelectorContainer: {
+    flexGrow: 0,
   },
   daySelector: {
     paddingHorizontal: 12,

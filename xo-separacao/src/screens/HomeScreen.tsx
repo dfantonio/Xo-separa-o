@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,15 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import * as SecureStore from 'expo-secure-store';
 import { db } from '../config/firebase';
 import { DIFFICULTY_CONFIG } from '../constants/difficulty';
 import { toggleTaskComplete, deleteTask, docToTask } from '../services/taskService';
 import { checkAndResetMonthlyScore } from '../services/sessionService';
 import { scheduleTaskReminders, cancelTaskReminders } from '../services/notificationService';
-import { getWeekKey } from '../utils/weekKey';
+import { getWeekKey, getDayWeekKey } from '../utils/weekKey';
+import { getVisibleTasks, type VisibleTask } from '../utils/taskAccumulation';
 import type { Task, DayOfWeek } from '../types/task';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -42,33 +43,41 @@ const DAY_TABS: { label: string; value: DayOfWeek }[] = [
   { label: 'Dom', value: 0 },
 ];
 
+const DAY_LABELS: Record<number, string> = {
+  1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex', 6: 'Sáb', 0: 'Dom',
+};
+
 const ACTION_WIDTH = 140;
 
-function isTaskCompleted(task: Task, weekKey: string): boolean {
+function isCompletedForDay(task: Task, weekKey: string, scheduledDay: DayOfWeek): boolean {
   if (task.recurring) {
-    return weekKey in (task.completions ?? {});
+    const dayKey = getDayWeekKey(weekKey, scheduledDay);
+    if (dayKey in (task.completions ?? {})) return true;
+    if (weekKey in (task.completions ?? {})) return true; // legacy
+    return false;
   }
   return task.completedBy !== null;
 }
 
 function TaskItem({
-  task,
+  item,
   memberId,
   sessionId,
   weekKey,
   navigation,
   onTaskCompleted,
-  setTasks,
+  setAllTasks,
 }: {
-  task: Task;
+  item: VisibleTask;
   memberId: string;
   sessionId: string;
   weekKey: string;
   navigation: NavigationProp;
   onTaskCompleted: () => void;
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  setAllTasks: React.Dispatch<React.SetStateAction<Task[]>>;
 }) {
-  const isCompleted = isTaskCompleted(task, weekKey);
+  const { task, scheduledDay, accumulated } = item;
+  const isCompleted = isCompletedForDay(task, weekKey, scheduledDay);
   const diff = DIFFICULTY_CONFIG[task.difficulty];
   const assigneeColor = MEMBER_COLORS[task.assignedTo] ?? '#888';
   const assigneeInitial =
@@ -135,17 +144,20 @@ function TaskItem({
 
   const handleToggle = async () => {
     const wasCompleted = isCompleted;
+    const dayKey = getDayWeekKey(weekKey, scheduledDay);
 
     // Optimistic update
-    setTasks((prev) =>
+    setAllTasks((prev) =>
       prev.map((t) => {
         if (t.id !== task.id) return t;
         if (t.recurring) {
           const newCompletions = { ...t.completions };
           if (wasCompleted) {
+            delete newCompletions[dayKey];
+            // Also try legacy key
             delete newCompletions[weekKey];
           } else {
-            newCompletions[weekKey] = { by: memberId } as Task['completions'][string];
+            newCompletions[dayKey] = { by: memberId } as Task['completions'][string];
           }
           return { ...t, completions: newCompletions };
         }
@@ -159,10 +171,10 @@ function TaskItem({
     }
 
     try {
-      await toggleTaskComplete(sessionId, task.id, memberId, weekKey);
+      await toggleTaskComplete(sessionId, task.id, memberId, weekKey, scheduledDay);
     } catch (error) {
       // Revert on failure
-      setTasks((prev) =>
+      setAllTasks((prev) =>
         prev.map((t) => {
           if (t.id !== task.id) return t;
           if (t.recurring) {
@@ -193,7 +205,7 @@ function TaskItem({
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteTask(sessionId, task.id, weekKey);
+              await deleteTask(sessionId, task.id, weekKey, scheduledDay);
             } catch {
               Alert.alert('Erro', 'Não foi possível excluir a tarefa.');
             }
@@ -230,10 +242,15 @@ function TaskItem({
             <Text style={[styles.taskName, isCompleted && styles.taskNameDone]}>
               {task.name}
             </Text>
-            <View style={styles.diffBadge}>
+            <View style={styles.diffRow}>
               <Text style={styles.diffText}>
                 {diff.emoji} {diff.label}
               </Text>
+              {accumulated && (
+                <Text style={styles.accumulatedBadge}>
+                  Acumulada de {DAY_LABELS[scheduledDay]}
+                </Text>
+              )}
             </View>
           </View>
           <View>
@@ -258,7 +275,7 @@ function TaskItem({
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [memberId, setMemberId] = useState<string>('memberA');
@@ -280,29 +297,36 @@ export default function HomeScreen() {
     loadSession();
   }, []);
 
+  // Fetch ALL tasks for the session (no day filter — accumulation needs all)
   useEffect(() => {
     if (!sessionId) return;
 
     setLoading(true);
     const tasksRef = collection(db, 'sessions', sessionId, 'tasks');
-    const q = query(tasksRef, where('days', 'array-contains', selectedDay));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(tasksRef, (snapshot) => {
       const loaded: Task[] = snapshot.docs.map((d) => docToTask(d));
-      loaded.sort((a, b) => {
-        const aCompleted = isTaskCompleted(a, weekKey);
-        const bCompleted = isTaskCompleted(b, weekKey);
-        if (aCompleted === bCompleted) return 0;
-        return aCompleted ? 1 : -1;
-      });
-      setTasks(loaded);
+      setAllTasks(loaded);
       setLoading(false);
     });
 
     return unsubscribe;
-  }, [sessionId, selectedDay]);
+  }, [sessionId]);
 
-  const pending = tasks.filter((t) => !isTaskCompleted(t, weekKey));
+  // Compute visible tasks for the selected day (with accumulation)
+  const visibleTasks = useMemo(() => {
+    const visible = getVisibleTasks(allTasks, selectedDay, today, weekKey);
+    // Sort: incomplete first, completed last
+    visible.sort((a, b) => {
+      const aCompleted = isCompletedForDay(a.task, weekKey, a.scheduledDay);
+      const bCompleted = isCompletedForDay(b.task, weekKey, b.scheduledDay);
+      if (aCompleted === bCompleted) return 0;
+      return aCompleted ? 1 : -1;
+    });
+    return visible;
+  }, [allTasks, selectedDay, today, weekKey]);
+
+  const pending = visibleTasks.filter((v) => !isCompletedForDay(v.task, weekKey, v.scheduledDay));
 
   const handleTaskCompleted = () => {
     if (selectedDay !== today) return;
@@ -349,7 +373,7 @@ export default function HomeScreen() {
 
       {loading ? (
         <ActivityIndicator size="large" color="#E94560" style={styles.loader} />
-      ) : tasks.length === 0 ? (
+      ) : visibleTasks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
             Nenhuma tarefa para hoje. Toque em + para adicionar.
@@ -357,18 +381,18 @@ export default function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          data={tasks}
-          keyExtractor={(item) => item.id}
+          data={visibleTasks}
+          keyExtractor={(v) => `${v.task.id}-${v.scheduledDay}`}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
+          renderItem={({ item: v }) => (
             <TaskItem
-              task={item}
+              item={v}
               memberId={memberId}
               sessionId={sessionId ?? ''}
               weekKey={weekKey}
               navigation={navigation}
               onTaskCompleted={handleTaskCompleted}
-              setTasks={setTasks}
+              setAllTasks={setAllTasks}
             />
           )}
         />
@@ -574,12 +598,20 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     color: '#888',
   },
-  diffBadge: {
+  diffRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 4,
+    gap: 8,
   },
   diffText: {
     fontSize: 12,
     color: '#666',
+  },
+  accumulatedBadge: {
+    fontSize: 10,
+    color: '#E94560',
+    fontWeight: '600',
   },
   taskPoints: {
     fontSize: 13,

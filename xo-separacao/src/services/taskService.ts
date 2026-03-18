@@ -16,6 +16,7 @@ import {
 import { db } from '../config/firebase';
 import { Task, DayOfWeek, AssignedTo, Difficulty, Points } from '../types/task';
 import { DIFFICULTY_CONFIG } from '../constants/difficulty';
+import { getDayWeekKey } from '../utils/weekKey';
 
 export function docToTask(docSnap: QueryDocumentSnapshot<DocumentData>): Task {
   const data = docSnap.data();
@@ -74,7 +75,12 @@ export async function updateTask(
   await updateDoc(taskRef, payload);
 }
 
-export async function deleteTask(sessionId: string, taskId: string, weekKey: string): Promise<void> {
+export async function deleteTask(
+  sessionId: string,
+  taskId: string,
+  weekKey: string,
+  scheduledDay: DayOfWeek,
+): Promise<void> {
   const taskRef = doc(db, 'sessions', sessionId, 'tasks', taskId);
   const sessionRef = doc(db, 'sessions', sessionId);
 
@@ -88,17 +94,17 @@ export async function deleteTask(sessionId: string, taskId: string, weekKey: str
 
     if (isRecurring) {
       const completions = taskData.completions ?? {};
-      if (completions[weekKey]) {
-        const completer = completions[weekKey].by as string;
+      const dayKey = getDayWeekKey(weekKey, scheduledDay);
+      const entry = completions[dayKey] ?? completions[weekKey]; // legacy compat
+      if (entry) {
         transaction.update(sessionRef, {
-          [`${completer}.score`]: increment(-points),
+          [`${entry.by}.score`]: increment(-points),
         });
       }
     } else {
       if (taskData.completedBy) {
-        const completer = taskData.completedBy as string;
         transaction.update(sessionRef, {
-          [`${completer}.score`]: increment(-points),
+          [`${taskData.completedBy}.score`]: increment(-points),
         });
       }
     }
@@ -118,7 +124,8 @@ export async function toggleTaskComplete(
   sessionId: string,
   taskId: string,
   memberId: string,
-  weekKey: string
+  weekKey: string,
+  scheduledDay: DayOfWeek,
 ): Promise<{ action: 'completed' | 'uncompleted'; points: Points }> {
   const taskRef = doc(db, 'sessions', sessionId, 'tasks', taskId);
   const sessionRef = doc(db, 'sessions', sessionId);
@@ -137,18 +144,22 @@ export async function toggleTaskComplete(
 
     if (isRecurring) {
       const completions = taskData.completions ?? {};
-      if (!completions[weekKey]) {
+      const dayKey = getDayWeekKey(weekKey, scheduledDay);
+      // Check new key first, then legacy key
+      const existingKey = completions[dayKey] ? dayKey : completions[weekKey] ? weekKey : null;
+
+      if (!existingKey) {
         transaction.update(taskRef, {
-          [`completions.${weekKey}`]: { by: memberId, at: serverTimestamp() },
+          [`completions.${dayKey}`]: { by: memberId, at: serverTimestamp() },
         });
         transaction.update(sessionRef, {
           [`${memberId}.score`]: increment(points),
         });
         return { action: 'completed' as const, points };
       } else {
-        const originalCompleter = completions[weekKey].by as string;
+        const originalCompleter = completions[existingKey].by as string;
         transaction.update(taskRef, {
-          [`completions.${weekKey}`]: deleteField(),
+          [`completions.${existingKey}`]: deleteField(),
         });
         transaction.update(sessionRef, {
           [`${originalCompleter}.score`]: increment(-points),

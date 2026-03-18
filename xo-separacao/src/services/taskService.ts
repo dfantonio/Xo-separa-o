@@ -43,7 +43,7 @@ export async function createTask(
     recurring: boolean;
     assignedTo: AssignedTo;
     difficulty: Difficulty;
-  }
+  },
 ): Promise<string> {
   const points = DIFFICULTY_CONFIG[params.difficulty].points;
   const tasksRef = collection(db, 'sessions', sessionId, 'tasks');
@@ -65,7 +65,7 @@ export async function createTask(
 export async function updateTask(
   sessionId: string,
   taskId: string,
-  updates: Partial<Pick<Task, 'name' | 'days' | 'recurring' | 'assignedTo' | 'difficulty'>>
+  updates: Partial<Pick<Task, 'name' | 'days' | 'recurring' | 'assignedTo' | 'difficulty'>>,
 ): Promise<void> {
   const taskRef = doc(db, 'sessions', sessionId, 'tasks', taskId);
   const payload: DocumentData = { ...updates };

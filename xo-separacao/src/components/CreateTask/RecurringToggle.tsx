@@ -25,9 +25,16 @@ export default function RecurringToggle({ value, onChange }: Props) {
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginTop: 20, marginBottom: 4, paddingVertical: 8,
-    backgroundColor: '#f9f9f9', borderRadius: 10, paddingLeft: 12, paddingRight: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    marginBottom: 4,
+    paddingVertical: 8,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    paddingLeft: 12,
+    paddingRight: 8,
   },
   textContainer: { flex: 1, marginRight: 12 },
   label: { fontSize: 15, fontWeight: '600', color: '#333' },

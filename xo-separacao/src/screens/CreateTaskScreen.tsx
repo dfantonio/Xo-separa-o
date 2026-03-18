@@ -65,7 +65,7 @@ export default function CreateTaskScreen() {
 
   function toggleDay(day: DayOfWeek) {
     setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
     );
   }
 
@@ -83,10 +83,22 @@ export default function CreateTaskScreen() {
     setAssigneeError('');
     setDifficultyError('');
 
-    if (!name.trim()) { setNameError('Nome é obrigatório.'); valid = false; }
-    if (selectedDays.length === 0) { setDayError('Selecione ao menos um dia da semana.'); valid = false; }
-    if (!assigneeChoice) { setAssigneeError('Selecione o responsável.'); valid = false; }
-    if (!difficulty) { setDifficultyError('Selecione a dificuldade.'); valid = false; }
+    if (!name.trim()) {
+      setNameError('Nome é obrigatório.');
+      valid = false;
+    }
+    if (selectedDays.length === 0) {
+      setDayError('Selecione ao menos um dia da semana.');
+      valid = false;
+    }
+    if (!assigneeChoice) {
+      setAssigneeError('Selecione o responsável.');
+      valid = false;
+    }
+    if (!difficulty) {
+      setDifficultyError('Selecione a dificuldade.');
+      valid = false;
+    }
     if (!valid) return;
 
     const assignedTo = resolveAssignedTo();
@@ -96,11 +108,19 @@ export default function CreateTaskScreen() {
     try {
       if (editingTask) {
         await updateTask(sessionId, editingTask.id, {
-          name: name.trim(), days: selectedDays, recurring, assignedTo, difficulty,
+          name: name.trim(),
+          days: selectedDays,
+          recurring,
+          assignedTo,
+          difficulty,
         });
       } else {
         await createTask(sessionId, {
-          name: name.trim(), days: selectedDays, recurring, assignedTo, difficulty,
+          name: name.trim(),
+          days: selectedDays,
+          recurring,
+          assignedTo,
+          difficulty,
         });
       }
       navigation.goBack();
@@ -150,7 +170,11 @@ export default function CreateTaskScreen() {
         onPress={handleSave}
         disabled={loading}
       >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Salvar</Text>}
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.saveButtonText}>Salvar</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
@@ -163,13 +187,32 @@ export default function CreateTaskScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   content: { flexGrow: 1, padding: 24, paddingTop: 56 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#E94560', marginBottom: 24, textAlign: 'center' },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#E94560',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
   label: { fontSize: 15, fontWeight: '600', color: '#333', marginBottom: 8, marginTop: 16 },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, color: '#333' },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: '#333',
+  },
   inputError: { borderColor: '#e74c3c' },
   charCount: { fontSize: 12, color: '#aaa', textAlign: 'right', marginTop: 4 },
   errorText: { color: '#e74c3c', fontSize: 13, marginTop: 4 },
-  saveButton: { backgroundColor: '#E94560', borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 32 },
+  saveButton: {
+    backgroundColor: '#E94560',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 32,
+  },
   buttonDisabled: { opacity: 0.7 },
   saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   cancelButton: { borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 8 },

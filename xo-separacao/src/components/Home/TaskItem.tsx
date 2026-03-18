@@ -14,7 +14,7 @@ import { toggleTaskComplete, deleteTask } from '../../services/taskService';
 import { getDayWeekKey } from '../../utils/weekKey';
 import { isCompletedForDay } from '../../utils/taskStatus';
 import type { VisibleTask } from '../../utils/taskAccumulation';
-import type { Task, DayOfWeek } from '../../types/task';
+import type { Task } from '../../types/task';
 import type { RootStackParamList } from '../../navigation/types';
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -26,7 +26,13 @@ const MEMBER_COLORS: Record<string, string> = {
 };
 
 const DAY_LABELS: Record<number, string> = {
-  1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex', 6: 'Sáb', 0: 'Dom',
+  1: 'Seg',
+  2: 'Ter',
+  3: 'Qua',
+  4: 'Qui',
+  5: 'Sex',
+  6: 'Sáb',
+  0: 'Dom',
 };
 
 const ACTION_WIDTH = 140;
@@ -55,11 +61,7 @@ export default function TaskItem({
   const diff = DIFFICULTY_CONFIG[task.difficulty];
   const assigneeColor = MEMBER_COLORS[task.assignedTo] ?? '#888';
   const assigneeInitial =
-    task.assignedTo === 'both'
-      ? '2'
-      : task.assignedTo === memberId
-      ? 'E'
-      : 'C';
+    task.assignedTo === 'both' ? '2' : task.assignedTo === memberId ? 'E' : 'C';
 
   const [badgeText, setBadgeText] = useState<string | null>(null);
   const badgeOpacity = useRef(new Animated.Value(0)).current;
@@ -91,7 +93,7 @@ export default function TaskItem({
           isOpen.current = false;
         }
       },
-    })
+    }),
   ).current;
 
   const closeSwipe = () => {
@@ -103,7 +105,10 @@ export default function TaskItem({
     setBadgeText(text);
     badgeOpacity.setValue(1);
     Animated.timing(badgeOpacity, {
-      toValue: 0, duration: 1200, delay: 400, useNativeDriver: true,
+      toValue: 0,
+      duration: 1200,
+      delay: 400,
+      useNativeDriver: true,
     }).start(() => setBadgeText(null));
   };
 
@@ -125,7 +130,7 @@ export default function TaskItem({
           return { ...t, completions: newCompletions };
         }
         return { ...t, completedBy: wasCompleted ? null : memberId } as Task;
-      })
+      }),
     );
 
     if (!wasCompleted) {
@@ -141,7 +146,7 @@ export default function TaskItem({
           if (t.id !== task.id) return t;
           if (t.recurring) return { ...t, completions: task.completions };
           return { ...t, completedBy: task.completedBy, completedAt: task.completedAt } as Task;
-        })
+        }),
       );
       console.error('toggleTaskComplete error:', error);
       Alert.alert('Erro', 'Não foi possível atualizar a tarefa.');
@@ -183,23 +188,30 @@ export default function TaskItem({
       </View>
 
       <Animated.View
-        style={[styles.taskRow, isCompleted && styles.taskRowCompleted, { transform: [{ translateX }] }]}
+        style={[
+          styles.taskRow,
+          isCompleted && styles.taskRowCompleted,
+          { transform: [{ translateX }] },
+        ]}
       >
         <TouchableOpacity onPress={handleToggle} style={styles.checkbox}>
           <View style={[styles.checkboxInner, isCompleted && styles.checkboxChecked]}>
             {isCompleted && <Text style={styles.checkmark}>✓</Text>}
           </View>
         </TouchableOpacity>
-        <View style={[styles.swipeArea, isCompleted && { opacity: 0.5 }]} {...panResponder.panHandlers}>
+        <View
+          style={[styles.swipeArea, isCompleted && { opacity: 0.5 }]}
+          {...panResponder.panHandlers}
+        >
           <View style={[styles.assigneeBadge, { backgroundColor: assigneeColor }]}>
             <Text style={styles.assigneeInitial}>{assigneeInitial}</Text>
           </View>
           <View style={styles.taskInfo}>
-            <Text style={[styles.taskName, isCompleted && styles.taskNameDone]}>
-              {task.name}
-            </Text>
+            <Text style={[styles.taskName, isCompleted && styles.taskNameDone]}>{task.name}</Text>
             <View style={styles.diffRow}>
-              <Text style={styles.diffText}>{diff.emoji} {diff.label}</Text>
+              <Text style={styles.diffText}>
+                {diff.emoji} {diff.label}
+              </Text>
               {accumulated && (
                 <Text style={styles.accumulatedBadge}>Acumulada de {DAY_LABELS[scheduledDay]}</Text>
               )}
@@ -210,13 +222,25 @@ export default function TaskItem({
               <Animated.View
                 style={[
                   styles.pointsBadge,
-                  { opacity: badgeOpacity, transform: [{ scale: badgeOpacity.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }) }] },
+                  {
+                    opacity: badgeOpacity,
+                    transform: [
+                      {
+                        scale: badgeOpacity.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.5, 1],
+                        }),
+                      },
+                    ],
+                  },
                 ]}
               >
                 <Text style={styles.pointsBadgeText}>{badgeText}</Text>
               </Animated.View>
             ) : (
-              <Text style={[styles.taskPoints, isCompleted && { opacity: 0.5 }]}>{task.points} pts</Text>
+              <Text style={[styles.taskPoints, isCompleted && { opacity: 0.5 }]}>
+                {task.points} pts
+              </Text>
             )}
           </View>
         </View>
@@ -227,27 +251,70 @@ export default function TaskItem({
 
 const styles = StyleSheet.create({
   swipeContainer: { marginBottom: 10, borderRadius: 12, overflow: 'hidden' },
-  actionButtons: { position: 'absolute', right: 0, top: 0, bottom: 0, width: ACTION_WIDTH, flexDirection: 'row' },
-  editButton: { flex: 1, backgroundColor: '#3A86FF', alignItems: 'center', justifyContent: 'center' },
-  deleteButton: { flex: 1, backgroundColor: '#e74c3c', alignItems: 'center', justifyContent: 'center' },
+  actionButtons: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: ACTION_WIDTH,
+    flexDirection: 'row',
+  },
+  editButton: {
+    flex: 1,
+    backgroundColor: '#3A86FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButton: {
+    flex: 1,
+    backgroundColor: '#e74c3c',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   actionButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
   taskRow: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9f9f9', borderRadius: 12,
-    padding: 12, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08, shadowRadius: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    padding: 12,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
   },
   taskRowCompleted: { backgroundColor: '#f0f0f0' },
   swipeArea: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   checkbox: { marginRight: 10 },
   checkboxInner: {
-    width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: '#ccc',
-    alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff',
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
   },
   checkboxChecked: { backgroundColor: '#E94560', borderColor: '#E94560' },
   checkmark: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
-  pointsBadge: { backgroundColor: '#E94560', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 8 },
+  pointsBadge: {
+    backgroundColor: '#E94560',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
   pointsBadgeText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
-  assigneeBadge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  assigneeBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
   assigneeInitial: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   taskInfo: { flex: 1 },
   taskName: { fontSize: 15, fontWeight: '500', color: '#222' },

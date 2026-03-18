@@ -16,8 +16,18 @@ interface MemberData {
 }
 
 const MONTH_NAMES = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 
 function getMonthLabel(date: Date): string {
@@ -49,7 +59,10 @@ export default function RankingScreen() {
       const sid = await SecureStore.getItemAsync('sessionId');
       const mid = await SecureStore.getItemAsync('memberId');
       if (mid) setMemberId(mid);
-      if (!sid) { setLoading(false); return; }
+      if (!sid) {
+        setLoading(false);
+        return;
+      }
 
       unsubscribe = onSnapshot(doc(db, 'sessions', sid), (snapshot) => {
         if (snapshot.exists()) {
@@ -62,7 +75,9 @@ export default function RankingScreen() {
     }
 
     init();
-    return () => { if (unsubscribe) unsubscribe(); };
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const scoreA = memberA?.score ?? 0;
@@ -106,7 +121,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingTop: 48, paddingHorizontal: 24 },
   backButton: { marginBottom: 8 },
   backButtonText: { fontSize: 16, color: '#E94560', fontWeight: '600' },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#E94560', textAlign: 'center', marginBottom: 6 },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#E94560',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
   subtitle: { fontSize: 15, textAlign: 'center', color: '#555', marginBottom: 4 },
   resetText: { fontSize: 13, textAlign: 'center', color: '#999', marginBottom: 32 },
   loader: { flex: 1 },

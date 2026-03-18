@@ -75,7 +75,7 @@ export default function JoinSessionScreen() {
       await SecureStore.setItemAsync('memberId', 'memberB');
 
       navigation.replace('Home');
-    } catch (error) {
+    } catch {
       Alert.alert('Erro', 'Não foi possível entrar na sessão. Tente novamente.');
     } finally {
       setLoading(false);

@@ -94,7 +94,10 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Xô Separação</Text>
-        <TouchableOpacity style={styles.rankingButton} onPress={() => navigation.navigate('Ranking')}>
+        <TouchableOpacity
+          style={styles.rankingButton}
+          onPress={() => navigation.navigate('Ranking')}
+        >
           <Text style={styles.rankingButtonText}>🏅</Text>
         </TouchableOpacity>
       </View>
@@ -148,7 +151,10 @@ export default function HomeScreen() {
         />
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CreateTask', undefined)}>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation.navigate('CreateTask', undefined)}
+      >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>
@@ -158,27 +164,54 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 48,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
   },
   title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#E94560', flex: 1 },
   rankingButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   rankingButtonText: { fontSize: 24 },
   daySelectorContainer: { flexGrow: 0 },
   daySelector: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
-  dayTab: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f0f0f0', alignItems: 'center', minWidth: 48 },
+  dayTab: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    minWidth: 48,
+  },
   dayTabSelected: { backgroundColor: '#E94560' },
   dayTabLabel: { fontSize: 13, fontWeight: '600', color: '#555' },
   dayTabLabelSelected: { color: '#fff' },
   todayDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#E94560', marginTop: 3 },
   loader: { flex: 1 },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
   emptyText: { textAlign: 'center', fontSize: 16, color: '#888' },
   list: { padding: 16, paddingBottom: 100 },
   fab: {
-    position: 'absolute', bottom: 32, right: 24, width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#E94560', alignItems: 'center', justifyContent: 'center',
-    elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4,
+    position: 'absolute',
+    bottom: 32,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#E94560',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   fabText: { color: '#fff', fontSize: 28, fontWeight: 'bold', lineHeight: 32 },
 });

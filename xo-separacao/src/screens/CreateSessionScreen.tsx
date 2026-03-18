@@ -57,7 +57,7 @@ export default function CreateSessionScreen() {
       await SecureStore.setItemAsync('memberId', 'memberA');
 
       setGeneratedCode(code);
-    } catch (error) {
+    } catch {
       Alert.alert('Erro', 'Não foi possível criar a sessão. Tente novamente.');
     } finally {
       setLoading(false);

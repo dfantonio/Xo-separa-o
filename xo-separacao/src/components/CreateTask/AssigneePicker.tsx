@@ -20,14 +20,16 @@ export default function AssigneePicker({ value, onChange, sessionId, memberId, e
   useEffect(() => {
     if (!sessionId || !memberId) return;
 
-    getDoc(doc(db, 'sessions', sessionId)).then((snap) => {
-      if (!snap.exists()) return;
-      const data = snap.data();
-      const me = data[memberId];
-      const partner = data[memberId === 'memberA' ? 'memberB' : 'memberA'];
-      if (me?.name) setMyName(me.name);
-      if (partner?.name) setPartnerName(partner.name);
-    }).catch(() => {});
+    getDoc(doc(db, 'sessions', sessionId))
+      .then((snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data();
+        const me = data[memberId];
+        const partner = data[memberId === 'memberA' ? 'memberB' : 'memberA'];
+        if (me?.name) setMyName(me.name);
+        if (partner?.name) setPartnerName(partner.name);
+      })
+      .catch(() => {});
   }, [sessionId, memberId]);
 
   const options: { key: AssigneeChoice; label: string }[] = [
@@ -61,8 +63,13 @@ const styles = StyleSheet.create({
   label: { fontSize: 15, fontWeight: '600', color: '#333', marginBottom: 8, marginTop: 16 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
-    borderWidth: 1.5, borderColor: '#ddd', borderRadius: 20,
-    paddingVertical: 6, paddingHorizontal: 14, minWidth: 48, alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#ddd',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    minWidth: 48,
+    alignItems: 'center',
   },
   chipSelected: { borderColor: '#E94560', backgroundColor: '#E94560' },
   chipText: { fontSize: 14, fontWeight: '600', color: '#555' },

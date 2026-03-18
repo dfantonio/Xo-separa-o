@@ -64,12 +64,14 @@ function TaskItem({
   sessionId,
   navigation,
   onTaskCompleted,
+  setTasks,
 }: {
   task: Task;
   memberId: string;
   sessionId: string;
   navigation: NavigationProp;
   onTaskCompleted: () => void;
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
 }) {
   const isCompleted = task.completedBy !== null;
   const diff = DIFFICULTY_CONFIG[task.difficulty];
@@ -147,15 +149,35 @@ function TaskItem({
   };
 
   const handleToggle = async () => {
+    const wasCompleted = isCompleted;
+
+    // Optimistic update — reflect change immediately in the UI
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id
+          ? { ...t, completedBy: wasCompleted ? null : memberId, completedAt: wasCompleted ? null : t.completedAt } as Task
+          : t
+      )
+    );
+
+    if (!wasCompleted) {
+      showBadge(`+${task.points} pts!`);
+      onTaskCompleted();
+    }
+
     try {
-      const result = await toggleTaskComplete(sessionId, task.id, memberId);
-      if (result.action === 'completed') {
-        showBadge(`+${result.points} pts!`);
-        onTaskCompleted();
-      }
+      await toggleTaskComplete(sessionId, task.id, memberId);
     } catch (error) {
+      // Revert on failure
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id
+            ? { ...t, completedBy: wasCompleted ? task.completedBy : null, completedAt: wasCompleted ? task.completedAt : null } as Task
+            : t
+        )
+      );
       console.error('toggleTaskComplete error:', error);
-      Alert.alert('Erro', String(error));
+      Alert.alert('Erro', 'Não foi possível atualizar a tarefa.');
     }
   };
 
@@ -211,7 +233,7 @@ function TaskItem({
             {isCompleted && <Text style={styles.checkmark}>✓</Text>}
           </View>
         </TouchableOpacity>
-        <View style={styles.swipeArea} {...panResponder.panHandlers}>
+        <View style={[styles.swipeArea, isCompleted && { opacity: 0.5 }]} {...panResponder.panHandlers}>
           <View style={[styles.assigneeBadge, { backgroundColor: assigneeColor }]}>
             <Text style={styles.assigneeInitial}>{assigneeInitial}</Text>
           </View>
@@ -226,16 +248,17 @@ function TaskItem({
             </View>
           </View>
           <View>
-            <Text style={styles.taskPoints}>{task.points} pts</Text>
-            {badgeText && (
+            {badgeText ? (
               <Animated.View
                 style={[
                   styles.pointsBadge,
-                  { opacity: badgeOpacity, transform: [{ translateY: badgeTranslateY }] },
+                  { opacity: badgeOpacity, transform: [{ scale: badgeOpacity.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }) }] },
                 ]}
               >
                 <Text style={styles.pointsBadgeText}>{badgeText}</Text>
               </Animated.View>
+            ) : (
+              <Text style={[styles.taskPoints, isCompleted && { opacity: 0.5 }]}>{task.points} pts</Text>
             )}
           </View>
         </View>
@@ -376,6 +399,7 @@ export default function HomeScreen() {
               sessionId={sessionId ?? ''}
               navigation={navigation}
               onTaskCompleted={handleTaskCompleted}
+              setTasks={setTasks}
             />
           )}
         />
@@ -512,7 +536,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   taskRowCompleted: {
-    opacity: 0.5,
+    backgroundColor: '#f0f0f0',
   },
   swipeArea: {
     flex: 1,
@@ -542,13 +566,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   pointsBadge: {
-    position: 'absolute',
-    right: 0,
-    bottom: '100%',
     backgroundColor: '#E94560',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
+    marginLeft: 8,
   },
   pointsBadgeText: {
     color: '#fff',

@@ -63,20 +63,22 @@ export function getVisibleTasks(
         .filter((d) => daysUpToView.includes(d) && d !== viewDay)
         .sort((a, b) => daysUpToView.indexOf(a) - daysUpToView.indexOf(b));
 
-      // Check from latest to earliest — find the most recent uncompleted one
+      // Check from latest to earliest — find the most recent scheduled day.
+      // If it's uncompleted, accumulate it. If it's completed, stop — don't
+      // look further back (completing Thu should not resurface Wed).
       for (let i = earlierScheduledDays.length - 1; i >= 0; i--) {
         const schedDay = earlierScheduledDays[i];
 
         if (task.recurring) {
           if (!isCompletedForDay(task, weekKey, schedDay)) {
             result.push({ task, scheduledDay: schedDay, accumulated: true });
-            break;
           }
+          break; // stop at the most recent scheduled day regardless
         } else {
           if (task.completedBy === null) {
             result.push({ task, scheduledDay: schedDay, accumulated: true });
-            break;
           }
+          break;
         }
       }
     }

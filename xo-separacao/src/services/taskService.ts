@@ -14,7 +14,7 @@ import {
   QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Task, DayOfWeek, AssignedTo, Difficulty, Points } from '../types/task';
+import { Task, DayOfWeek, AssignedTo, Difficulty, Points, ScoringMode } from '../types/task';
 import { DIFFICULTY_CONFIG } from '../constants/difficulty';
 import { getDayWeekKey } from '../utils/weekKey';
 
@@ -26,6 +26,7 @@ export function docToTask(docSnap: QueryDocumentSnapshot<DocumentData>): Task {
     days: data.days ?? [data.dayOfWeek],
     recurring: data.recurring ?? false,
     assignedTo: data.assignedTo,
+    scoringMode: data.scoringMode ?? 'split',
     difficulty: data.difficulty,
     points: data.points,
     completedBy: data.completedBy ?? null,
@@ -42,6 +43,7 @@ export async function createTask(
     days: DayOfWeek[];
     recurring: boolean;
     assignedTo: AssignedTo;
+    scoringMode: ScoringMode;
     difficulty: Difficulty;
   },
 ): Promise<string> {
@@ -52,6 +54,7 @@ export async function createTask(
     days: params.days,
     recurring: params.recurring,
     assignedTo: params.assignedTo,
+    scoringMode: params.scoringMode,
     difficulty: params.difficulty,
     points,
     completedBy: null,
@@ -65,7 +68,7 @@ export async function createTask(
 export async function updateTask(
   sessionId: string,
   taskId: string,
-  updates: Partial<Pick<Task, 'name' | 'days' | 'recurring' | 'assignedTo' | 'difficulty'>>,
+  updates: Partial<Pick<Task, 'name' | 'days' | 'recurring' | 'assignedTo' | 'scoringMode' | 'difficulty'>>,
 ): Promise<void> {
   const taskRef = doc(db, 'sessions', sessionId, 'tasks', taskId);
   const payload: DocumentData = { ...updates };
@@ -92,9 +95,10 @@ export async function deleteTask(
     const points = taskData.points as Points;
     const isRecurring = taskData.recurring ?? false;
     const isBoth = taskData.assignedTo === 'both';
+    const scoringMode = (taskData.scoringMode ?? 'split') as ScoringMode;
 
     const removeScore = (member: string) => {
-      if (isBoth) {
+      if (isBoth && scoringMode === 'split') {
         const half = Math.round(points / 2);
         transaction.update(sessionRef, { ['memberA.score']: increment(-half) });
         transaction.update(sessionRef, { ['memberB.score']: increment(-half) });
@@ -145,9 +149,10 @@ export async function toggleTaskComplete(
     const points = taskData.points as Points;
     const isRecurring = taskData.recurring ?? false;
     const isBoth = taskData.assignedTo === 'both';
+    const scoringMode = (taskData.scoringMode ?? 'split') as ScoringMode;
 
     const addScore = (member: string, pts: number) => {
-      if (isBoth) {
+      if (isBoth && scoringMode === 'split') {
         const half = Math.round(pts / 2);
         transaction.update(sessionRef, { ['memberA.score']: increment(half) });
         transaction.update(sessionRef, { ['memberB.score']: increment(half) });

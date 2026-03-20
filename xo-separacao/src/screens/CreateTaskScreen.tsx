@@ -13,7 +13,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import * as SecureStore from 'expo-secure-store';
 import type { RootStackParamList } from '../navigation/types';
-import type { DayOfWeek, AssignedTo, Difficulty } from '../types/task';
+import type { DayOfWeek, AssignedTo, Difficulty, ScoringMode } from '../types/task';
 import { createTask, updateTask } from '../services/taskService';
 import DaySelector from '../components/CreateTask/DaySelector';
 import RecurringToggle from '../components/CreateTask/RecurringToggle';
@@ -35,6 +35,7 @@ export default function CreateTaskScreen() {
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(editingTask?.days ?? []);
   const [recurring, setRecurring] = useState(editingTask?.recurring ?? true);
   const [assigneeChoice, setAssigneeChoice] = useState<AssigneeChoice | null>(null);
+  const [scoringMode, setScoringMode] = useState<ScoringMode>(editingTask?.scoringMode ?? 'split');
   const [difficulty, setDifficulty] = useState<Difficulty | null>(editingTask?.difficulty ?? null);
 
   const [nameError, setNameError] = useState('');
@@ -112,6 +113,7 @@ export default function CreateTaskScreen() {
           days: selectedDays,
           recurring,
           assignedTo,
+          scoringMode,
           difficulty,
         });
       } else {
@@ -120,6 +122,7 @@ export default function CreateTaskScreen() {
           days: selectedDays,
           recurring,
           assignedTo,
+          scoringMode,
           difficulty,
         });
       }
@@ -156,7 +159,12 @@ export default function CreateTaskScreen() {
       <RecurringToggle value={recurring} onChange={setRecurring} />
       <AssigneePicker
         value={assigneeChoice}
-        onChange={setAssigneeChoice}
+        onChange={(v) => {
+          setAssigneeChoice(v);
+          if (v !== 'both') setScoringMode('split');
+        }}
+        scoringMode={scoringMode}
+        onScoringModeChange={setScoringMode}
         sessionId={sessionId}
         memberId={memberId}
         error={assigneeError}

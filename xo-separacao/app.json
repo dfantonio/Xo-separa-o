@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "xo-separacao",
+    "name": "Xô Separação",
     "slug": "xo-separacao",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,7 +12,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.xoseparacao.app"
     },
     "android": {
       "package": "com.xoseparacao.app",
@@ -24,6 +25,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f98b1fe6-ef89-4953-86dd-3e2bdb8d8fcb"
+      }
+    },
+    "owner": "dfantonio",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f98b1fe6-ef89-4953-86dd-3e2bdb8d8fcb"
     }
   }
 }

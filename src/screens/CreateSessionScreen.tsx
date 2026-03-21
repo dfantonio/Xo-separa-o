@@ -40,10 +40,18 @@ export default function CreateSessionScreen() {
     }
 
     setLoading(true);
+
+    Alert.alert('ENV Check', JSON.stringify({
+      apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ? '✓' : '✗',
+      projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ? '✓' : '✗',
+      appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ? '✓' : '✗',
+    }));
+
     try {
       const code = generateCode();
       const sessionRef = doc(collection(db, 'sessions'));
       const sessionId = sessionRef.id;
+      Alert.alert('Debug', 'Passo 1: Escrevendo no Firestore...');
 
       await setDoc(sessionRef, {
         code,
@@ -52,12 +60,14 @@ export default function CreateSessionScreen() {
         createdAt: serverTimestamp(),
         lastResetMonth: new Date().toISOString().slice(0, 7),
       });
+      Alert.alert('Debug', 'Passo 2: Firestore OK. Salvando sessão...');
 
       await SecureStore.setItemAsync('sessionId', sessionId);
       await SecureStore.setItemAsync('memberId', 'memberA');
+      Alert.alert('Debug', 'Passo 3: Tudo OK!');
 
       setGeneratedCode(code);
-    } catch {
+    } catch (error) {
       Alert.alert('Erro', 'Não foi possível criar a sessão. Tente novamente.');
     } finally {
       setLoading(false);

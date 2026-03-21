@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as SecureStore from 'expo-secure-store';
 import { RootStackParamList } from '../navigation/types';
@@ -21,6 +21,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
+      <Image source={require('../../assets/icon.png')} style={styles.logo} />
       <Text style={styles.title}>Xô Separação</Text>
       <Text style={styles.slogan}>Organize a rotina do lar juntos 💑</Text>
       <TouchableOpacity
@@ -46,6 +47,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 32,
     backgroundColor: '#fff',
+  },
+  logo: {
+    width: 240,
+    height: 240,
+    marginBottom: 16,
   },
   title: {
     fontSize: 36,

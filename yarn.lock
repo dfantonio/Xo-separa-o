@@ -1960,53 +1960,52 @@
     invariant "^2.2.4"
     nullthrows "^1.1.1"
 
-"@react-navigation/core@^7.16.2":
-  version "7.16.2"
-  resolved "https://registry.yarnpkg.com/@react-navigation/core/-/core-7.16.2.tgz#d35c0fd6ffe18f62294908122b44cdd49fc6ba2e"
-  integrity sha512-0dbCC2aTjNW7MvG1fY7zeq6eYvmmaFCEnBDXPuMPJ8uKgfs9lFGXIQFIfBdmcBVX6vHhS+K213VCsuHSIv5jYw==
+"@react-navigation/core@^7.24.0":
+  version "7.24.0"
+  resolved "https://orbit-flutter-af768sf2xs.fbr.land/npm/npm-proxy/@react-navigation/core/-/core-7.24.0.tgz#d6104ebcf8696f7858772c158822e553170a6d6f"
+  integrity sha512-PPMHGSgLB65eqWOBHeD/nGyzGJV3rcZ5sZbsCXlaC37HnLmwTEjB4CaOQn8CBVVv/Sc0Kl/W5dpPLls9Stk2WA==
   dependencies:
-    "@react-navigation/routers" "^7.5.3"
+    "@react-navigation/routers" "^7.6.5"
     escape-string-regexp "^4.0.0"
     fast-deep-equal "^3.1.3"
-    nanoid "^3.3.11"
-    query-string "^7.1.3"
     react-is "^19.1.0"
     use-latest-callback "^0.2.4"
     use-sync-external-store "^1.5.0"
 
-"@react-navigation/elements@^2.9.11":
-  version "2.9.11"
-  resolved "https://registry.yarnpkg.com/@react-navigation/elements/-/elements-2.9.11.tgz#7be3cdf1adb9e65f38bf8a3d91460181f7c042f3"
-  integrity sha512-O5KiwaVCcEVuqZgQ77xiBFSl1sha77rNMTFlLWYnom33ZHPDarV3bM9WNyVnMZxU8ZVTi02X3+ZhO0fSn5QYyg==
+"@react-navigation/elements@^2.9.45":
+  version "2.9.45"
+  resolved "https://orbit-flutter-af768sf2xs.fbr.land/npm/npm-proxy/@react-navigation/elements/-/elements-2.9.45.tgz#bc87d3476813db3ce481841b37ab6d78e9353392"
+  integrity sha512-r64qCgjA6asQo4Zlv2lAl68ARkfPbV+BNRm3n9JlMoFr4Ma2A+92Z+sWT1coJRoSXkAwVNb70+LjpM6fo6/D4A==
   dependencies:
     color "^4.2.3"
     use-latest-callback "^0.2.4"
     use-sync-external-store "^1.5.0"
 
-"@react-navigation/native@^7.1.33":
-  version "7.1.34"
-  resolved "https://registry.yarnpkg.com/@react-navigation/native/-/native-7.1.34.tgz#25c09241a4a1313e39c866c16dc279a3352e5068"
-  integrity sha512-zzQ0mKAhLsjTIsaoLfILKZVMObJzE0F+bOi0hl2Glt+1Rd2GtaWJ1Z024c3yLmX+Oc79pqoCQLBXpyxtrZu9NQ==
+"@react-navigation/native@^7.5.1":
+  version "7.5.1"
+  resolved "https://orbit-flutter-af768sf2xs.fbr.land/npm/npm-proxy/@react-navigation/native/-/native-7.5.1.tgz#8af9e9c9b9e40379d27aed94a3be99139275a558"
+  integrity sha512-p9xOvhG8q8rq0FPAoh0JC22ALbyRZt7U2uH8XrHRDjvqOEFrumME7szM6LaWW2WctolAVeZAfOTV+pUKULI/kQ==
   dependencies:
-    "@react-navigation/core" "^7.16.2"
+    "@react-navigation/core" "^7.24.0"
     escape-string-regexp "^4.0.0"
     fast-deep-equal "^3.1.3"
     nanoid "^3.3.11"
+    standard-navigation "^0.0.8"
     use-latest-callback "^0.2.4"
 
-"@react-navigation/routers@^7.5.3":
-  version "7.5.3"
-  resolved "https://registry.yarnpkg.com/@react-navigation/routers/-/routers-7.5.3.tgz#8002930ef5f62351be2475d0dffde3ffaee174d7"
-  integrity sha512-1tJHg4KKRJuQ1/EvJxatrMef3NZXEPzwUIUZ3n1yJ2t7Q97siwRtbynRpQG9/69ebbtiZ8W3ScOZF/OmhvM4Rg==
+"@react-navigation/routers@^7.6.5":
+  version "7.6.5"
+  resolved "https://orbit-flutter-af768sf2xs.fbr.land/npm/npm-proxy/@react-navigation/routers/-/routers-7.6.5.tgz#c7c4dde9e42d7a10540b5bf675e0a01ae0005051"
+  integrity sha512-hpvpVFt6wu3U014F/0Qy45VZCErlUvIV8kN1L6HovN5P9OpbXAzFTaRQmG7VW6czg2tSkUL5S3dZA0HIu5QirQ==
   dependencies:
     nanoid "^3.3.11"
 
-"@react-navigation/stack@^7.8.5":
-  version "7.8.6"
-  resolved "https://registry.yarnpkg.com/@react-navigation/stack/-/stack-7.8.6.tgz#55d9a3d03cb796f05373bb44bc0763d5abc35eeb"
-  integrity sha512-niczFxHbpsKcFDXlRyrHF5ZBuNNU8zGmPeJt4CZYCuxY7L8QYkC1Rpql8iMgfrDY457ZFQU9DLNg6pjyUuR8vQ==
+"@react-navigation/stack@^7.12.1":
+  version "7.12.1"
+  resolved "https://orbit-flutter-af768sf2xs.fbr.land/npm/npm-proxy/@react-navigation/stack/-/stack-7.12.1.tgz#1c25116fbe21e54c843cb268629a3294927a4020"
+  integrity sha512-4KEoho3yVy58B1Myj5ZNiSVmA8U8YfVbJrZT23uyA5pUy2dqPANH3REQ/zx/nMw4I62EVvqPHYLLbfGzI9/wTQ==
   dependencies:
-    "@react-navigation/elements" "^2.9.11"
+    "@react-navigation/elements" "^2.9.45"
     color "^4.2.3"
     use-latest-callback "^0.2.4"
 
@@ -3067,11 +3066,6 @@ debug@^3.1.0, debug@^3.2.7:
   dependencies:
     ms "^2.1.1"
 
-decode-uri-component@^0.2.2:
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/decode-uri-component/-/decode-uri-component-0.2.2.tgz#e69dbe25d37941171dd540e024c444cd5188e1e9"
-  integrity sha512-FqUYQ+8o158GyGTrMFJms9qh3CqTKvAqgqsTnkLI8sKu0028orqBhxNMFkFen0zGyg6epACD32pjVk58ngIErQ==
-
 deep-is@^0.1.3:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/deep-is/-/deep-is-0.1.4.tgz#a6f2dce612fadd2ef1f519b73551f17e85199831"
@@ -3906,11 +3900,6 @@ fill-range@^7.1.1:
   integrity sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==
   dependencies:
     to-regex-range "^5.0.1"
-
-filter-obj@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/filter-obj/-/filter-obj-1.1.0.tgz#9b311112bc6c6127a16e016c6c5d7f19e0805c5b"
-  integrity sha512-8rXg1ZnX7xzy2NGDVkBVaAy+lSlPNwad13BtgSlLuxfIslyt5Vg64U7tFcCt4WS1R0hvtnQybT/IyCkGZ3DpXQ==
 
 finalhandler@1.1.2:
   version "1.1.2"
@@ -5512,16 +5501,6 @@ punycode@^2.1.0:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.3.1.tgz#027422e2faec0b25e1549c3e1bd8309b9133b6e5"
   integrity sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==
 
-query-string@^7.1.3:
-  version "7.1.3"
-  resolved "https://registry.yarnpkg.com/query-string/-/query-string-7.1.3.tgz#a1cf90e994abb113a325804a972d98276fe02328"
-  integrity sha512-hh2WYhq4fi8+b+/2Kg9CEge4fDPvHS534aOOvOZeQ3+Vf2mCFsaFBYj0i+iXcAq6I9Vzp5fjMFBlONvayDC1qg==
-  dependencies:
-    decode-uri-component "^0.2.2"
-    filter-obj "^1.1.0"
-    split-on-first "^1.0.0"
-    strict-uri-encode "^2.0.0"
-
 range-parser@~1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/range-parser/-/range-parser-1.2.1.tgz#3cf37023d199e1c24d1a55b84800c2f3e6468031"
@@ -5986,11 +5965,6 @@ source-map@^0.6.0:
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
-split-on-first@^1.0.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/split-on-first/-/split-on-first-1.1.0.tgz#f610afeee3b12bce1d0c30425e76398b78249a5f"
-  integrity sha512-43ZssAJaMusuKWL8sKUBQXHWOpq8d6CfN/u1p4gUzfJkM05C8rxTmYrkIPTXapZpORA6LkkzcUulJ8FqA7Uudw==
-
 stable-hash@^0.0.5:
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/stable-hash/-/stable-hash-0.0.5.tgz#94e8837aaeac5b4d0f631d2972adef2924b40269"
@@ -6007,6 +5981,11 @@ stacktrace-parser@^0.1.10:
   integrity sha512-WjlahMgHmCJpqzU8bIBy4qtsZdU9lRlcZE3Lvyej6t4tuOuv1vk57OW3MBrj6hXBFx/nNoC9MPMTcr5YA7NQbg==
   dependencies:
     type-fest "^0.7.1"
+
+standard-navigation@^0.0.8:
+  version "0.0.8"
+  resolved "https://orbit-flutter-af768sf2xs.fbr.land/npm/npm-proxy/standard-navigation/-/standard-navigation-0.0.8.tgz#aef79bef130ec8ba0a9c070d3a728d96d68df8a8"
+  integrity sha512-TyVbo7INUDWtsUWDFn8RR7kwR87U0S4xHfLfbbnyeC581TmmyqQ+eM+nPw8rQTSD8QitRVcYfPaSHr/QJiUy1g==
 
 statuses@~1.5.0:
   version "1.5.0"
@@ -6030,11 +6009,6 @@ stream-buffers@2.2.x:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/stream-buffers/-/stream-buffers-2.2.0.tgz#91d5f5130d1cef96dcfa7f726945188741d09ee4"
   integrity sha512-uyQK/mx5QjHun80FLJTfaWE7JtwfRMKBLkMne6udYOmvH0CawotVa7TfgYHzAnpphn4+TweIx1QKMnRIbipmUg==
-
-strict-uri-encode@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/strict-uri-encode/-/strict-uri-encode-2.0.0.tgz#b9c7330c7042862f6b142dc274bbcc5866ce3546"
-  integrity sha512-QwiXZgpRcKkhTj2Scnn++4PKtWsH0kpzZ62L2R6c/LUVYv7hVnZqcg2+sMuT6R7Jusu1vviK/MFsu6kNJfWlEQ==
 
 string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.3:
   version "4.2.3"
